@@ -364,7 +364,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 
 .news-date {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 14px;
   color: var(--text-3);
   padding-top: 3px;
   line-height: 1.4;
@@ -374,6 +374,17 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 .news-link { display: inline-block; margin-top: 8px; font-size: 13px; color: var(--accent); font-weight: 500; }
 
 /* ── Team ── */
+.team-section-label {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: block;
+}
+
 .pi-card {
   background: var(--surface);
   border: 1px solid var(--border);
