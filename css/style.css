@@ -190,6 +190,24 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 }
 
 /* ── Home hero ── */
+.hero-section {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+.hero-text { flex: 1; min-width: 0; }
+.hero-photo {
+  width: 176px;
+  height: 176px;
+  flex-shrink: 0;
+}
+.hero-photo img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .hero-name {
   font-size: clamp(26px, 4vw, 40px);
   font-weight: 700;
@@ -694,6 +712,7 @@ input[type=number].lca-input:focus {
   .sidebar.open { transform: translateX(0); }
   .mob-btn { display: block; }
   .main { padding: 64px 20px 64px; }
+  .hero-photo { display: none; }
   .lca-layout { grid-template-columns: 1fr; }
   .lca-panel { position: static; }
   .news-item { grid-template-columns: 1fr; gap: 4px; }
