@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jiang Lab — From Molecules to Systems</title>
+  <meta name="description" content="Jiang Lab at the University of Alabama — environmental engineering, sustainability science, and data-driven problem-solving.">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/theme.js"></script>
+</head>
+<body>
+
+<button class="mob-btn" onclick="toggleMobileNav()" aria-label="Open menu">&#9776;</button>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="sidebar-name">Jiang Lab</a>
+    <div class="sidebar-tagline">From Molecules<br>to Systems</div>
+  </div>
+
+  <ul class="sidebar-nav">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="happenings.html">Happenings</a></li>
+    <li><a href="team.html">Team</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li class="nav-tool"><a href="lca.html">LCA Calculator</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-social">
+      <!-- Email -->
+      <a href="mailto:djiang6@ua.edu" class="social-link" title="Email">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </a>
+      <!-- LinkedIn — replace href with your profile URL -->
+      <a href="#" class="social-link" title="LinkedIn" id="linkedin-link">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+          <rect x="2" y="9" width="4" height="12"/>
+          <circle cx="4" cy="4" r="2"/>
+        </svg>
+      </a>
+      <!-- Google Scholar -->
+      <a href="https://scholar.google.com/citations?user=YOUR_ID" class="social-link" title="Google Scholar" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269z"/>
+          <path d="M12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/>
+        </svg>
+      </a>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+      Theme
+    </button>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="main-inner">
+
+    <!-- Hero -->
+    <section class="section">
+      <h1 class="hero-name">
+        <span class="hi">Welcome. I'm </span><span class="name">Daqian Jiang.</span>
+      </h1>
+      <p class="hero-pos">Associate Professor · Department of Civil, Construction &amp; Environmental Engineering · University of Alabama</p>
+      <p class="hero-desc">We work at the intersection of environmental engineering, sustainability science, and data-driven problem-solving. Our goal is to tackle challenges in water quality, chemical safety, and industrial decarbonization — and to build a lab culture that is supportive, ambitious, and balanced.</p>
+      <div class="hero-social">
+        <a href="mailto:djiang6@ua.edu" class="social-link" title="Email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </a>
+        <a href="https://scholar.google.com/citations?user=YOUR_ID" class="social-link" title="Google Scholar" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269z"/>
+            <path d="M12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/>
+          </svg>
+        </a>
+        <a href="#" class="social-link" title="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+            <rect x="2" y="9" width="4" height="12"/>
+            <circle cx="4" cy="4" r="2"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin-bottom:52px;">
+
+    <!-- Research areas -->
+    <section class="section">
+      <span class="section-label">Research Areas</span>
+      <div class="area-grid">
+        <div class="area-card">
+          <h3>Water Quality &amp; Treatment</h3>
+          <p>Novel bio-electrochemical systems for nitrogen, selenium, and emerging contaminant removal from water and wastewater.</p>
+        </div>
+        <div class="area-card">
+          <h3>Chemical Safety &amp; Material Flows</h3>
+          <p>Material flow analysis of PFAS, BPA, and industrial non-hazardous waste to inform monitoring, policy, and circular economy strategies.</p>
+        </div>
+        <div class="area-card">
+          <h3>Industrial Decarbonization</h3>
+          <p>Life cycle assessment and techno-economic analysis of sustainable aviation fuel, biomass-based construction materials, and low-carbon water infrastructure.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent happenings -->
+    <section class="section">
+      <span class="section-label">Recent Happenings</span>
+      <div class="news-snippet">
+        <div class="ns-date">June 3<br>2026</div>
+        <div>
+          <div class="ns-title">New paper in <em>Water Research</em></div>
+          <div class="ns-body">Nitrate reshapes electron partitioning and Se⁰ formation during continuous electro-microbial treatment of mixed selenium oxyanions. Led by Dr. Adriana Riveros.</div>
+        </div>
+      </div>
+      <p style="margin-top:14px;font-size:13px;"><a href="happenings.html">View all happenings →</a></p>
+    </section>
+
+    <!-- Funders -->
+    <section class="section">
+      <span class="section-label">Research Support</span>
+      <div class="funder-row">
+        <span class="funder">National Science Foundation</span>
+        <span class="funder">USDA-NIFA</span>
+        <span class="funder">Department of Energy</span>
+        <span class="funder">SERDP</span>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LCA Calculator — Jiang Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/theme.js"></script>
+</head>
+<body>
+
+<button class="mob-btn" onclick="toggleMobileNav()" aria-label="Open menu">&#9776;</button>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="sidebar-name">Jiang Lab</a>
+    <div class="sidebar-tagline">From Molecules<br>to Systems</div>
+  </div>
+  <ul class="sidebar-nav">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="happenings.html">Happenings</a></li>
+    <li><a href="team.html">Team</a></li>
+    <li><a href="publications.html">Publications</a></li>
+    <li class="nav-tool"><a href="lca.html" class="active">LCA Calculator</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="sidebar-footer">
+    <div class="sidebar-social">
+      <a href="mailto:djiang6@ua.edu" class="social-link" title="Email">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </a>
+      <a href="#" class="social-link" title="LinkedIn">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+          <rect x="2" y="9" width="4" height="12"/>
+          <circle cx="4" cy="4" r="2"/>
+        </svg>
+      </a>
+      <a href="https://scholar.google.com/citations?user=YOUR_ID" class="social-link" title="Google Scholar" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M5.242 13.769 0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269z"/>
+          <path d="M12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/>
+        </svg>
+      </a>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+      Theme
+    </button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="main-inner">
+
+    <section class="section">
+      <h1 style="font-size:28px;letter-spacing:-0.02em;margin-bottom:8px;">LCA Calculator</h1>
+      <p id="lca-system-title" style="font-size:14px;color:var(--text-2);margin-bottom:20px;"></p>
+
+      <div class="lca-intro">
+        Enter the quantities for each process input below. The calculator multiplies each quantity by its predefined emission factor and sums the contributions to estimate the total <strong>Global Warming Potential</strong>.
+        Emission factors are defined in <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:3px;">data/lca-data.js</code> — update that file to change the system boundary or factor values.
+      </div>
+
+      <div class="lca-layout">
+
+        <!-- Input form -->
+        <div>
+          <div id="lca-form"></div>
+        </div>
+
+        <!-- Results panel -->
+        <div class="lca-panel">
+          <div class="lca-total-label">Total Impact</div>
+          <div class="lca-total-val" id="lca-total">0.0000</div>
+          <div class="lca-total-unit" id="lca-unit-label">kg CO₂-eq / m³</div>
+          <div class="lca-total-unit" id="lca-fu-label" style="margin-top:-16px;margin-bottom:22px;"></div>
+
+          <div class="lca-bd-title">Contribution breakdown</div>
+          <div id="lca-breakdown">
+            <div style="font-size:12px;color:var(--text-3);padding:8px 0;">Enter values above to see breakdown.</div>
+          </div>
+
+          <button class="lca-reset-btn" id="lca-reset-btn">Reset all inputs</button>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="data/lca-data.js"></script>
+<script src="js/lca.js"></script>
+</body>
+</html>
