@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LCA Calculator 鈥?Jiang Lab</title>
+  <title>LCA Calculator — Jiang Lab</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="js/theme.js"></script>
 </head>
@@ -19,7 +19,7 @@
   <ul class="sidebar-nav">
     <li><a href="index.html">Home</a></li>
     <li><a href="happenings.html">Happenings</a></li>
-    <li><a href="team.html">Team</a></li>
+    <li><a href="team.html">Team and CV</a></li>
     <li><a href="publications.html">Publications</a></li>
     <li class="nav-tool"><a href="lca.html" class="active">LCA Calculator</a></li>
     <li><a href="contact.html">Contact</a></li>
@@ -62,7 +62,7 @@
 
       <div class="lca-intro">
         Enter the quantities for each process input below. The calculator multiplies each quantity by its predefined emission factor and sums the contributions to estimate the total <strong>Global Warming Potential</strong>.
-        Emission factors are defined in <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:3px;">data/lca-data.js</code> 鈥?update that file to change the system boundary or factor values.
+        Emission factors are defined in <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:3px;">data/lca-data.js</code> — update that file to change the system boundary or factor values.
       </div>
 
       <div class="lca-layout">
@@ -76,7 +76,7 @@
         <div class="lca-panel">
           <div class="lca-total-label">Total Impact</div>
           <div class="lca-total-val" id="lca-total">0.0000</div>
-          <div class="lca-total-unit" id="lca-unit-label">kg CO鈧?eq / m鲁</div>
+          <div class="lca-total-unit" id="lca-unit-label">kg CO₂ eq / m³</div>
           <div class="lca-total-unit" id="lca-fu-label" style="margin-top:-16px;margin-bottom:22px;"></div>
 
           <div class="lca-bd-title">Contribution breakdown</div>
