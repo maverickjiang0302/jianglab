@@ -216,6 +216,21 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 
 .hero-social { display: flex; gap: 14px; align-items: center; }
 
+/* ── Section h2 (template-style large header) ── */
+.section-h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin-bottom: 48px;
+}
+
 /* ── Research area cards ── */
 .area-grid {
   display: grid;
@@ -241,6 +256,48 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
   font-size: 12.5px;
   color: var(--text-2);
   line-height: 1.55;
+}
+
+/* ── Home page template-style cards ── */
+.area-grid-home {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.area-card-home {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+.area-card-home h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.area-card-home p {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.home-pub-list { display: flex; flex-direction: column; gap: 12px; }
+
+.home-pub-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+}
+.home-pub-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.home-pub-meta {
+  font-size: 13px;
+  color: var(--text-2);
 }
 
 /* ── Funders ── */
