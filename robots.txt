@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jiang-lab.org/sitemap.xml
