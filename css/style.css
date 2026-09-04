@@ -725,7 +725,10 @@ input[type=number].lca-input:focus {
   .sidebar.open { transform: translateX(0); }
   .mob-btn { display: block; }
   .main { padding: 64px 20px 64px; }
-  .hero-photo { display: none; }
+  .hero-section { flex-direction: column; text-align: center; gap: 20px; }
+  .hero-photo { width: 140px; height: 140px; margin: 0 auto; }
+  .hero-desc { margin-left: auto; margin-right: auto; }
+  .hero-social { justify-content: center; }
   .lca-layout { grid-template-columns: 1fr; }
   .lca-panel { position: static; }
   .news-item { grid-template-columns: 1fr; gap: 4px; }
