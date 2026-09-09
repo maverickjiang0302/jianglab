@@ -502,6 +502,38 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 }
 .pub-journal { font-style: italic; }
 
+.pub-blurb {
+  font-size: 15px;
+  color: var(--text-2);
+  line-height: 1.75;
+  margin-bottom: 20px;
+}
+.pub-graphical-abstract {
+  width: 100%;
+  max-width: 560px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+.pub-featured {
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.65;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+.pub-featured a { font-weight: 600; }
+.pub-featured-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-right: 8px;
+}
+.pub-featured-note { font-size: 12.5px; color: var(--text-3); }
+
 /* ── Contact ── */
 .contact-wrap {
   background: var(--surface);
