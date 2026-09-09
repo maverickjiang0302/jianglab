@@ -510,12 +510,15 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 }
 .pub-graphical-abstract {
   width: 100%;
-  max-width: 380px;
-  display: block;
+  max-width: 300px;
+  float: right;
+  margin: 4px 0 16px 24px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin: 0 auto 20px;
   box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+@media (max-width: 640px) {
+  .pub-graphical-abstract { float: none; margin: 0 auto 20px; display: block; }
 }
 .pub-featured {
   font-size: 13.5px;
