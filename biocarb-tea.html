@@ -1,0 +1,3099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioCarb TEA v2 — Techno-Economic Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --ink:       #1a1816;
+  --ink2:      #4a4845;
+  --ink3:      #8a8885;
+  --rule:      #d8d6d2;
+  --rule2:     #ece9e4;
+  --page:      #f5f3ef;
+  --surface:   #ffffff;
+  --green-out: #d6f0c8;   /* output cell colour — matches spreadsheet green */
+  --green-ink: #2a6b15;
+  --green-bd:  #8dc87a;
+  --yellow-in: #fffbdd;   /* input cell colour — spreadsheet yellow */
+  --yellow-bd: #c8b800;
+  --blue-hd:   #dce8f5;   /* section header colour */
+  --blue-ink:  #1a4a80;
+  --blue-upd:  #e7f0fb;   /* updated / spreadsheet-linked cells */
+  --blue-upd-bd:#8fb2d9;
+  --teal-hd:   #d5ede8;
+  --teal-ink:  #0d5448;
+  --amber-hd:  #fce8cc;
+  --amber-ink: #7a3c00;
+  --purple-hd: #e8dff5;
+  --purple-ink:#3a1878;
+  --accent:    #1a6b42;   /* BioCarb signature green */
+  --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  --sans: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body {
+  font-family: var(--sans);
+  background: var(--page);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── Page shell ─────────────────────────────────────────────────────────────── */
+.shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* ── Masthead ────────────────────────────────────────────────────────────────── */
+.masthead {
+  padding: 28px 0 20px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.masthead-left { display: flex; flex-direction: column; gap: 4px; }
+.masthead-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.masthead-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: var(--ink);
+  line-height: 1;
+}
+.masthead-title span { color: var(--accent); }
+.masthead-sub {
+  font-size: 11px;
+  color: var(--ink3);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+.msp-hero {
+  text-align: right;
+}
+.msp-hero-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--ink3); }
+.msp-hero-val {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  color: var(--accent);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.msp-hero-unit { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.msp-hero-badge {
+  display: inline-block;
+  background: var(--green-out);
+  color: var(--green-ink);
+  border: 1px solid var(--green-bd);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  margin-top: 4px;
+}
+
+/* ── Section grid ────────────────────────────────────────────────────────────── */
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+
+/* ── Card ────────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.card-head {
+  padding: 7px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-head.blue   { background: var(--blue-hd);   color: var(--blue-ink); }
+.card-head.teal   { background: var(--teal-hd);   color: var(--teal-ink); }
+.card-head.amber  { background: var(--amber-hd);  color: var(--amber-ink); }
+.card-head.purple { background: var(--purple-hd); color: var(--purple-ink); }
+.card-head.green  { background: var(--green-out); color: var(--green-ink); }
+.card-head-note { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 10px; opacity: 0.75; }
+.card.collapsible-card > .card-head { gap: 10px; }
+.card-summary {
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule2);
+  background: #fbfaf8;
+  color: var(--ink2);
+  font-size: 11px;
+  font-weight: 700;
+}
+.card.collapsible-card:not(.expanded) > .card-body,
+.card.collapsible-card:not(.expanded) > .card-body-bare { display: none; }
+.expand-card-btn {
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.6);
+  color: inherit;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.expand-card-btn::before { content: '+ '; }
+.card.expanded .expand-card-btn::before { content: '- '; }
+.card-body { padding: 12px; }
+.card-body-bare { padding: 0; }
+
+/* ── Spreadsheet table ───────────────────────────────────────────────────────── */
+.ss-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.ss-table th {
+  background: var(--rule2);
+  color: var(--ink2);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+.ss-table th.r { text-align: right; }
+.ss-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--rule2);
+  vertical-align: middle;
+  color: var(--ink);
+}
+.ss-table td.r { text-align: right; font-family: var(--mono); font-size: 10px; }
+.ss-table tr:last-child td { border-bottom: none; }
+.ss-table tr:hover td { background: rgba(0,0,0,0.015); }
+
+/* Spreadsheet cell types */
+.cell-out {
+  background: var(--green-out) !important;
+  color: var(--green-ink) !important;
+  font-weight: 600;
+  border: 1px solid var(--green-bd) !important;
+}
+.cell-in {
+  background: var(--yellow-in) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--yellow-bd) !important;
+}
+.row-title td {
+  background: var(--rule2);
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink2);
+  padding: 5px 8px;
+}
+.row-subtotal td {
+  background: var(--rule2);
+  font-weight: 600;
+  border-top: 1px solid var(--rule) !important;
+}
+.row-total td {
+  background: #e8e6e2;
+  font-weight: 700;
+  border-top: 2px solid var(--ink2) !important;
+}
+
+/* ── KPI strip ───────────────────────────────────────────────────────────────── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.kpi-item {
+  padding: 12px 14px;
+  border-right: 1px solid var(--rule);
+}
+.kpi-item:last-child { border-right: none; }
+.kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink3); margin-bottom: 4px; }
+.kpi-val { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; font-variant-numeric: tabular-nums; }
+.kpi-val.green { color: var(--green-ink); }
+.kpi-val.blue  { color: var(--blue-ink); }
+.kpi-val.amber { color: var(--amber-ink); }
+.kpi-unit { font-size: 10px; color: var(--ink3); margin-top: 3px; }
+.kpi-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-top: 3px;
+  background: var(--green-out);
+  color: var(--green-ink);
+  border: 1px solid var(--green-bd);
+}
+.kpi-badge.yellow {
+  background: var(--yellow-in);
+  color: #665500;
+  border-color: var(--yellow-bd);
+}
+
+/* ── Input cell (user-editable) ─────────────────────────────────────────────── */
+.input-cell {
+  display: inline-flex;
+  align-items: center;
+  background: var(--yellow-in);
+  border: 1px solid var(--yellow-bd);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #5a4800;
+  min-width: 60px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.input-cell:focus-within { box-shadow: 0 0 0 2px rgba(200,184,0,0.4); }
+.input-cell input {
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  outline: none;
+  text-align: right;
+}
+
+.updated-ref {
+  background: var(--blue-upd) !important;
+  border-color: var(--blue-upd-bd) !important;
+  color: var(--blue-ink) !important;
+}
+
+.source-ref {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--blue-upd);
+  border: 1px solid var(--blue-upd-bd);
+  color: var(--blue-ink);
+  font-size: 9px;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+/* ── Output cell ─────────────────────────────────────────────────────────────── */
+.output-cell {
+  display: inline-block;
+  background: var(--green-out);
+  border: 1px solid var(--green-bd);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--green-ink);
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ── Section divider ─────────────────────────────────────────────────────────── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--ink3);
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ── Chart container ─────────────────────────────────────────────────────────── */
+.chart-wrap { position: relative; }
+
+/* ── DCFROR table ────────────────────────────────────────────────────────────── */
+.dcf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  font-family: var(--mono);
+}
+.dcf-table th {
+  background: var(--purple-hd);
+  color: var(--purple-ink);
+  padding: 4px 6px;
+  text-align: right;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid var(--rule);
+  white-space: nowrap;
+}
+.dcf-table th.lbl { text-align: left; font-family: var(--sans); min-width: 160px; }
+.dcf-table td {
+  padding: 3px 6px;
+  border: 1px solid var(--rule2);
+  text-align: right;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+.dcf-table td.lbl { text-align: left; font-family: var(--sans); color: var(--ink); font-size: 10px; }
+.dcf-table tr.bold td { font-weight: 700; color: var(--ink); }
+.dcf-table td.out { background: var(--green-out); color: var(--green-ink); font-weight: 600; }
+.dcf-table td.pos { color: #1a6b15; }
+.dcf-table td.neg { color: #a32020; }
+
+/* ── Legend dot ──────────────────────────────────────────────────────────────── */
+.leg { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ink2); }
+.leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Slider row (for interactive inputs) ─────────────────────────────────────── */
+.slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.slider-row label { font-size: 11px; color: var(--ink2); min-width: 120px; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+.slider-row .slider-val { font-family: var(--mono); font-size: 11px; min-width: 55px; text-align: right; }
+.slider-row .slider-val.out { color: var(--green-ink); font-weight: 600; }
+
+/* ── Top action bar ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--ink); color: #fff;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 10px; padding: 0 24px; height: 46px;
+  margin-bottom: 0;
+}
+.topbar-brand {
+  font-size: 13px; font-weight: 700; letter-spacing: -.3px;
+  margin-right: auto; color: #fff;
+}
+.topbar-brand span { color: #6dc98a; }
+.topbar-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  cursor: pointer; border: none; transition: .15s;
+}
+.topbar-btn.reset  { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+.topbar-btn.reset:hover { background: rgba(255,255,255,.22); }
+.topbar-btn.pdf    { background: #1a6b42; color: #fff; }
+.topbar-btn.pdf:hover { background: #15563a; }
+.pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26,24,22,0.45);
+  padding: 20px;
+}
+.pdf-modal.open { display: flex; }
+.pdf-dialog {
+  width: min(420px, 100%);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.22);
+  padding: 18px;
+}
+.pdf-dialog h2 { font-size: 18px; margin-bottom: 8px; }
+.pdf-dialog p { color: var(--ink2); font-size: 12px; margin-bottom: 14px; }
+.pdf-choice {
+  width: 100%;
+  border: 1px solid var(--rule);
+  background: #f8f6f2;
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 700;
+}
+.pdf-choice:hover { border-color: var(--accent); background: #eef6ef; }
+.pdf-close {
+  border: none;
+  background: transparent;
+  color: var(--ink3);
+  cursor: pointer;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* ── Flow diagram ── */
+.flow-section { margin-bottom: 24px; }
+.flow-section-hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--rule);
+  background: var(--rule2); border-radius: 4px 4px 0 0;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--ink2);
+}
+.flow-section-hd .legend { display: flex; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+.flow-section-hd .leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ink3); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.flow-section-hd .leg-sq { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+.flow-svg-outer {
+  background: #fff; border: 1px solid var(--rule); border-top: none;
+  border-radius: 0 0 4px 4px; overflow-x: auto; padding: 18px 16px 14px;
+}
+.fn rect { rx: 6; transition: .18s; }
+.fn.active rect { fill: #e8f5ee; stroke: #1a7a42; stroke-width: 2; }
+.fn.inactive rect { fill: #f5f4f1; stroke: #ccc9c2; stroke-width: 1.5; }
+.fn.reference rect { fill: #dce8f5; stroke: #1a4a80; stroke-width: 1.8; }
+.fn.output-node rect { fill: #e8f5ee; stroke: #1a7a42; stroke-width: 2.2; }
+.fn text { pointer-events: none; font-family: var(--sans); }
+.fn.active text    { fill: #1a7a42; font-weight: 600; }
+.fn.inactive text  { fill: #aaa; }
+.fn.reference text { fill: #1a4a80; font-weight: 500; }
+.fn.output-node text { fill: #1a7a42; font-weight: 700; }
+.fn { cursor: pointer; }
+.flow-lbl { font-size: 9.5px; fill: #555; font-family: var(--sans); }
+.flow-lbl.green  { fill: #1a7a42; font-weight: 600; }
+.flow-lbl.blue   { fill: #1a4a80; }
+.flow-lbl.amber  { fill: #7a3c00; }
+.flow-lbl.teal   { fill: #0d5448; }
+.node-popup {
+  display: none; margin: 8px 16px 12px;
+  padding: 10px 14px; background: #e8f5ee;
+  border: 1px solid #6dc98a; border-radius: 4px;
+  font-size: 11px; color: #1a4a80; line-height: 1.55;
+}
+.node-popup strong { color: #1a7a42; }
+
+/* ── Workspace tabs ─────────────────────────────────────────────────────────── */
+.workspace-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+.workspace-tab {
+  appearance: none;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink2);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+.workspace-tab:hover {
+  border-color: var(--blue-upd-bd);
+  color: var(--blue-ink);
+}
+.workspace-tab.active {
+  background: var(--blue-upd);
+  border-color: var(--blue-upd-bd);
+  color: var(--blue-ink);
+}
+.workspace-pane { display: none; }
+.workspace-pane.active { display: block; }
+.scenario-note {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--blue-upd-bd);
+  background: var(--blue-upd);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--blue-ink);
+  line-height: 1.5;
+}
+.scenario-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.scenario-flow-shell .flow-svg-outer {
+  padding: 14px;
+}
+.scenario-flow-shell svg {
+  width: 100%;
+  height: auto;
+  min-width: 960px;
+}
+.flow-template {
+  display: none;
+}
+.scenario-copy-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.scenario-copy-grid .card,
+.scenario-copy-grid .kpi-strip,
+.scenario-copy-grid .masthead,
+.scenario-copy-grid .foot {
+  margin-bottom: 0;
+}
+.scenario-copy-grid input,
+.scenario-copy-grid button,
+.scenario-copy-grid canvas {
+  pointer-events: none;
+}
+
+/* ── Footer note ─────────────────────────────────────────────────────────────── */
+.foot {
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 10px;
+  color: var(--ink3);
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+@media print {
+  .topbar, .workspace-tabs, .expand-card-btn { display: none !important; }
+  .workspace-pane { display: block !important; }
+  .card.collapsible-card > .card-body,
+  .card.collapsible-card > .card-body-bare { display: block !important; }
+  .card-summary { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-brand"><span>Bio</span>Carb TEA v2 — SI_2_4.xlsx</div>
+  <button class="topbar-btn reset" onclick="resetAll()">↺ Reset defaults</button>
+  <button class="topbar-btn pdf" onclick="openPdfChooser()">⬇ Download PDF</button>
+</div>
+<div class="pdf-modal" id="pdf-modal" role="dialog" aria-modal="true" aria-labelledby="pdf-modal-title">
+  <div class="pdf-dialog">
+    <h2 id="pdf-modal-title">Download PDF</h2>
+    <p>Select one workflow. The export expands all hidden calculation tables for the selected page.</p>
+    <button class="pdf-choice" onclick="choosePdfDownload('ws-main', 'BioCarb_Mortar')">BioCarb Mortar dashboard</button>
+    <button class="pdf-choice" onclick="choosePdfDownload('ws-scenario-1', 'BioCarb_Dry_Mortar')">BioCarb Dry Mortar dashboard</button>
+    <button class="pdf-close" onclick="closePdfChooser()">Cancel</button>
+  </div>
+</div>
+<div class="shell">
+
+<div class="flow-section flow-template" id="flow-template">
+  <div class="flow-section-hd">
+    Process Flow Diagram
+    <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink3);margin-left:6px;">— current saved layout from material/flow/result/biocarb-mortar-current-layout.svg</span>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-sq" style="background:#d8e8e4;border:1.5px solid #34495e;"></div>Process</div>
+      <div class="leg-item"><div class="leg-sq" style="background:#fff5cc;border:1.5px solid #34495e;"></div>Input</div>
+      <div class="leg-item"><div class="leg-sq" style="background:#d9e6f2;border:1.5px solid #34495e;"></div>Utility</div>
+      <div class="leg-item"><div class="leg-sq" style="background:#eee5f6;border:1.5px solid #34495e;"></div>Output</div>
+    </div>
+  </div>
+  <div class="flow-svg-outer">
+    <svg id="flow-svg" viewBox="0 0 1500 620" xmlns="http://www.w3.org/2000/svg" width="1500" height="620" style="display:block;width:1500px;height:620px;background:#e4f1ee">
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L10,3 L0,6 Z" fill="#263238"></path>
+        </marker>
+        <style>
+          .node { cursor: pointer; user-select: none; }
+          .node rect { stroke: #34495e; stroke-width: 1.5; }
+          .node.process rect { fill: #d8e8e4; }
+          .node.input rect { fill: #fff5cc; }
+          .node.utility rect { fill: #d9e6f2; }
+          .node.output rect { fill: #eee5f6; }
+          .node.junction rect { fill: #e8e8e8; }
+          .node text { pointer-events: none; fill: #17202a; font-size: 14px; font-weight: 600; }
+          .node .subtext { font-size: 12px; font-weight: normal; }
+          .edge { fill: none; stroke: #263238; stroke-width: 2; marker-end: url(#arrow); pointer-events: none; }
+          .edge.recycle { stroke-dasharray: 7 5; }
+          .edge.energy { stroke-width: 1.8; }
+          .edge-label {
+            pointer-events: none; font-size: 12px; fill: #17202a; paint-order: stroke;
+            stroke: #e4f1ee; stroke-width: 5px; stroke-linejoin: round;
+          }
+          .title { font-size: 21px; font-weight: 700; fill: #17202a; }
+          .hint { font-size: 12px; fill: #566573; }
+        </style>
+      </defs>
+      <text x="24" y="34" class="title">BioCarb Mortar Process</text>
+      <text x="24" y="54" class="hint">Saved layout from material/flow/result. Click a node for details.</text>
+
+      <g id="edge-layer"><path id="path-e1" class="edge material" d="M 75 142 H 92.5 V 166 H 110"></path><path id="path-e2" class="edge material" d="M 75 192 H 92.5 V 166 H 110"></path><path id="path-e3" class="edge material" d="M 225 166 H 255 V 166 H 285"></path><path id="path-e4" class="edge energy" d="M 332.5 114 V 124.5 H 342.5 V 135"></path><path id="path-e5" class="edge material" d="M 400 166 H 430 V 166 H 460"></path><text id="label-e5" class="edge-label" x="430" y="158" text-anchor="middle">RCF</text><path id="path-e6" class="edge material" d="M 457.5 340 V 268.5 H 517.5 V 197"></path><text id="label-e6" class="edge-label" x="487.5" y="260.5" text-anchor="middle">TA</text><path id="path-e7" class="edge recycle" d="M 877.5 135 V 77 H 517.5 V 135"></path><text id="label-e7" class="edge-label" x="697.5" y="69" text-anchor="middle">TA and W</text><path id="path-e8" class="edge energy" d="M 462.5 114 H 490 V 135 H 517.5"></path><path id="path-e9" class="edge material" d="M 558.5 244 V 220.5 H 517.5 V 197"></path><path id="path-e10" class="edge material" d="M 575 166 H 605 V 166 H 635"></path><path id="path-e11" class="edge energy" d="M 697.5 114 V 124.5 H 697.5 V 135"></path><path id="path-e12" class="edge material" d="M 695.5 307 V 252 H 697.5 V 197"></path><text id="label-e12" class="edge-label" x="696.5" y="244" text-anchor="middle">CO2</text><path id="path-e13" class="edge material" d="M 760 166 H 790 V 166 H 820"></path><path id="path-e14" class="edge material" d="M 935 166 H 997.5 V 166 H 1060"></path><text id="label-e14" class="edge-label" x="997.5" y="158" text-anchor="middle">slurry</text><path id="path-e15" class="edge energy" d="M 1127.5 114 V 124.5 H 1127.5 V 135"></path><path id="path-e16" class="edge material" d="M 1009 125 H 1034.5 V 166 H 1060"></path><path id="path-e17" class="edge material" d="M 1008 199 H 1034 V 166 H 1060"></path><path id="path-e18" class="edge product" d="M 1195 166 H 1242.5 V 166 H 1290"></path><text id="label-e18" class="edge-label" x="1242.5" y="158" text-anchor="middle">Biocarb mortar</text><path id="path-e19" class="edge energy" d="M 768 342 H 909.5 V 391 H 1051"></path><text id="label-e19" class="edge-label" x="909.5" y="334" text-anchor="middle">makeup electricity</text><path id="path-e20" class="edge energy" d="M 763 446 H 907 V 391 H 1051"></path><text id="label-e20" class="edge-label" x="907" y="383" text-anchor="middle">makeup electricity</text><path id="path-e21" class="edge energy" d="M 1201 391 H 1246.5 V 391 H 1292"></path><text id="label-e21" class="edge-label" x="1246.5" y="383" text-anchor="middle">Ele</text></g>
+      <g id="node-layer"><g class="node input" data-node-id="WC" transform="translate(20 125)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">WC</text></g><g class="node input" data-node-id="Dis" transform="translate(20 175)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">Dis</text></g><g class="node process" data-node-id="Crushing" transform="translate(110 135)"><rect width="115" height="62" rx="7" ry="7"></rect><text x="57.5" y="36" text-anchor="middle">Crushing</text></g><g class="node process" data-node-id="Grinding" transform="translate(285 135)"><rect width="115" height="62" rx="7" ry="7"></rect><text x="57.5" y="36" text-anchor="middle">Grinding</text></g><g class="node input" data-node-id="EleGrinding" transform="translate(305 80)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-node-id="Soaking" transform="translate(460 135)"><rect width="115" height="62" rx="7" ry="7"></rect><text x="57.5" y="36" text-anchor="middle">Soaking</text></g><g class="node input" data-node-id="EleSoaking" transform="translate(435 80)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node input" data-node-id="WSoaking" transform="translate(531 244)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">W</text></g><g class="node process" data-node-id="Carbonation" transform="translate(635 135)"><rect width="125" height="62" rx="7" ry="7"></rect><text x="62.5" y="36" text-anchor="middle">Carbonation</text></g><g class="node input" data-node-id="EleCarbonation" transform="translate(670 80)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-node-id="Settling" transform="translate(820 135)"><rect width="115" height="62" rx="7" ry="7"></rect><text x="57.5" y="36" text-anchor="middle">Settling</text></g><g class="node process" data-node-id="MortarMixing" transform="translate(1060 135)"><rect width="135" height="62" rx="7" ry="7"></rect><text x="67.5" y="36" text-anchor="middle">Mortar mixing</text></g><g class="node input" data-node-id="EleMortar" transform="translate(1100 80)"><rect width="55" height="34" rx="7" ry="7"></rect><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node input" data-node-id="Sand" transform="translate(944 108)"><rect width="65" height="34" rx="7" ry="7"></rect><text x="32.5" y="22" text-anchor="middle">Sand</text></g><g class="node input" data-node-id="OPC" transform="translate(943 182)"><rect width="65" height="34" rx="7" ry="7"></rect><text x="32.5" y="22" text-anchor="middle">OPC</text></g><g class="node utility" data-node-id="TAExtraction" transform="translate(390 340)"><rect width="135" height="62" rx="7" ry="7"></rect><text x="67.5" y="36" text-anchor="middle">TA extraction</text></g><g class="node utility" data-node-id="PowerWithoutCC" transform="translate(618 411)"><rect width="145" height="70" rx="7" ry="7"></rect><text x="72.5" y="30" text-anchor="middle">Power plant</text><text class="subtext" x="72.5" y="51" text-anchor="middle">without CC</text></g><g class="node utility" data-node-id="PowerWithCC" transform="translate(623 307)"><rect width="145" height="70" rx="7" ry="7"></rect><text x="72.5" y="30" text-anchor="middle">Power plant</text><text class="subtext" x="72.5" y="51" text-anchor="middle">with CC</text></g><g class="node junction" data-node-id="CombinedOutput" transform="translate(1051 369)"><rect width="150" height="44" rx="7" ry="7"></rect><text x="75" y="27" text-anchor="middle">Combined Output</text></g><g class="node output" data-node-id="SystemExit" transform="translate(1290 135)"><rect width="155" height="62" rx="7" ry="7"></rect><text x="77.5" y="26" text-anchor="middle">System Exit</text><text class="subtext" x="77.5" y="47" text-anchor="middle">Biocarb mortar</text></g><g class="node output" data-node-id="SystemWide" transform="translate(1292 360)"><rect width="155" height="62" rx="7" ry="7"></rect><text x="77.5" y="26" text-anchor="middle">System Wide</text><text class="subtext" x="77.5" y="47" text-anchor="middle">Ele</text></g></g>
+    </svg>
+  </div>
+  <div class="node-popup" id="node-popup">
+    <button onclick="document.getElementById('node-popup').style.display='none'"
+      style="float:right;border:none;background:none;cursor:pointer;font-size:14px;font-weight:700;color:#1a7a42;line-height:1;">×</button>
+    <span id="node-popup-text"></span>
+  </div>
+</div>
+
+<div class="workspace-tabs">
+  <button class="workspace-tab active" data-workspace-target="ws-main" onclick="setWorkspaceTab(this, 'ws-main')">BioCarb Mortar</button>
+  <button class="workspace-tab" data-workspace-target="ws-scenario-1" onclick="setWorkspaceTab(this, 'ws-scenario-1')">BioCarb Dry Mortar</button>
+</div>
+
+<div id="ws-main" class="workspace-pane active">
+<div class="flow-section scenario-flow-shell">
+  <div class="flow-section-hd">
+    BioCarb Mortar Workflow
+    <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink3);margin-left:6px;">— baseline process flow</span>
+  </div>
+  <div class="flow-svg-outer" id="main-flow-copy"></div>
+</div>
+<!-- ── MASTHEAD ──────────────────────────────────────────────────────────────── -->
+<header class="masthead">
+  <div class="masthead-left">
+    <div class="masthead-eyebrow">Techno-Economic Analysis · SI_2_4_TEA_BioCarb.xlsx</div>
+    <div class="masthead-title"><span>Bio</span>Carb Mortar — TEA Dashboard</div>
+    <div class="masthead-sub">
+      University of Alabama · DOE DE-FE0032263 · Chen et al. 2024<br>
+      DCFROR Model · 2020 USD · 10-yr plant life · IRR 10%<br>
+      Production: 2,646,288 kg/yr · 8 hr/day · 300 days/yr
+    </div>
+  </div>
+  <div class="msp-hero">
+    <div class="msp-hero-label">Minimum Selling Price</div>
+    <div class="msp-hero-val" id="msp-hero" data-ref="TEA_BioCarb!B129">6.664</div>
+    <div class="msp-hero-unit">¢ / kg BioCarb mortar (2020 USD)</div>
+    <div class="msp-hero-badge" id="msp-badge" data-ref="TEA_BioCarb!B129">Output</div>
+  </div>
+</header>
+
+<!-- ── KPI STRIP ─────────────────────────────────────────────────────────────── -->
+<div class="kpi-strip">
+  <div class="kpi-item">
+    <div class="kpi-label">Total Capital Investment</div>
+    <div class="kpi-val blue" id="kpi-tci" data-ref="TEA_BioCarb!U18">$111,362</div>
+    <div class="kpi-unit">TCI</div>
+    <div class="kpi-badge">Output</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-label">Fixed Capital Investment</div>
+    <div class="kpi-val blue" data-ref="TEA_BioCarb!U15">$106,059</div>
+    <div class="kpi-unit">FCI</div>
+    <div class="kpi-badge">Output</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-label">Total Variable OPEX</div>
+    <div class="kpi-val green" id="kpi-var" data-ref="TEA_BioCarb!K82">2.776</div>
+    <div class="kpi-unit">¢/kg</div>
+    <div class="kpi-badge">Output</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-label">Total Fixed OPEX</div>
+    <div class="kpi-val green" id="kpi-fixed" data-ref="TEA_BioCarb!K93">3.188</div>
+    <div class="kpi-unit">¢/kg</div>
+    <div class="kpi-badge">Output</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-label">Annual Product Sales</div>
+    <div class="kpi-val amber" id="annual-sales" data-ref="TEA_BioCarb!F106">$176,340</div>
+    <div class="kpi-unit">$/yr at MSP</div>
+    <div class="kpi-badge yellow">At MSP</div>
+  </div>
+</div>
+
+<!-- ── ROW 1: Economic Assumptions + Technical Assumptions ───────────────────── -->
+<div class="grid-2">
+
+  <!-- Economic Assumptions (rows 1-25, col A-D) -->
+  <div class="card">
+    <div class="card-head blue" data-ref="TEA_BioCarb!A1:D25">
+      Economic Assumptions
+      <span class="card-head-note">Rows 1–25, Col A–D</span>
+    </div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead><tr><th>Parameter</th><th class="r">Value</th><th>Unit / Note</th></tr></thead>
+        <tbody>
+          <tr><td>Equity fraction</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B5">40%</div></td>
+            <td></td></tr>
+          <tr><td>Loan interest rate <span class="source-ref">TEA_BioCarb!B6</span></td>
+            <td class="r">
+              <div class="input-cell" title="Yellow = user input (B6)">
+                <input type="number" id="loan-rate" data-ref="TEA_BioCarb!B6" value="8" min="1" max="20" step="0.5" oninput="recalc()">%
+              </div>
+            </td>
+            <td> input</td></tr>
+          <tr><td>Loan term <span class="source-ref">TEA_BioCarb!B7</span></td>
+            <td class="r">
+              <div class="input-cell" title="Yellow = user input (B7)">
+                <input type="number" id="loan-term" data-ref="TEA_BioCarb!B7" value="10" min="5" max="30" step="1" oninput="recalc()">yr
+              </div>
+            </td>
+            <td> input</td></tr>
+          <tr><td>Working capital (% of FCI)</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B10">5%</div></td>
+            <td></td></tr>
+          <tr><td>Depreciation period</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B14">7 yr</div></td>
+            <td> MACRS (IRS Pub 946)</td></tr>
+          <tr><td>Construction period</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B15">1 yr</div></td>
+            <td></td></tr>
+          <tr><td>Start-up time</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B19">0.1 yr</div></td>
+            <td></td></tr>
+          <tr><td>Start-up production rate</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B20">75%</div></td>
+            <td></td></tr>
+          <tr><td>Discount rate (IRR) <span class="source-ref">TEA_BioCarb!B23</span></td>
+            <td class="r">
+              <div class="input-cell" title="Yellow = user input (B23)">
+                <input type="number" id="irr" data-ref="TEA_BioCarb!B23" value="10" min="1" max="30" step="0.5" oninput="recalc()">%
+              </div>
+            </td>
+            <td> input</td></tr>
+          <tr><td>Income tax rate <span class="source-ref">TEA_BioCarb!B24</span></td>
+            <td class="r">
+              <div class="input-cell" title="Yellow = user input (B24)">
+                <input type="number" id="tax-rate" data-ref="TEA_BioCarb!B24" value="21" min="0" max="40" step="1" oninput="recalc()">%
+              </div>
+            </td>
+            <td> input</td></tr>
+          <tr><td>Cost year</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!B25">2020</div></td>
+            <td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Technical Assumptions (rows 1-25, col G-L) -->
+  <div class="card">
+    <div class="card-head teal" data-ref="TEA_BioCarb!G1:L13">
+      Technical Assumptions
+      <span class="card-head-note">Rows 1–25, Col G–L</span>
+    </div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead><tr><th>Parameter</th><th class="r">Value</th><th>Unit</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Mixer size / cycle time</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!H8">0.085 m³</div></td>
+            <td>m³/batch</td>
+            <td></td></tr>
+          <tr><td>Mortar density</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!H3">2,162</div></td>
+            <td>kg/m³</td><td></td></tr>
+          <tr><td>Working efficiency <span class="source-ref">TEA_BioCarb!H4</span></td>
+            <td class="r">
+              <div class="input-cell" title="H4 — user input">
+                <input type="number" id="hours-yr" data-ref="TEA_BioCarb!H4" value="2400" min="1000" max="8760" step="100" oninput="recalc()">
+              </div>
+            </td>
+            <td>hr/yr</td>
+            <td>8 hr/day × 300 days</td></tr>
+          <tr><td>Batch size</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!J8">183.77</div></td>
+            <td>kg/batch</td><td></td></tr>
+          <tr><td>Production rate</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!J9">1,102.62</div></td>
+            <td>kg/hr</td><td></td></tr>
+          <tr><td>Daily production</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!J10">8,821</div></td>
+            <td>kg/day</td><td></td></tr>
+          <tr><td>Annual production</td>
+            <td class="r"><div class="output-cell" id="annual-prod" data-ref="TEA_BioCarb!J11">2,646,288</div></td>
+            <td>kg/yr</td>
+            <td> key denominator</td></tr>
+          <tr><td>Plant lifetime <span class="source-ref">TEA_BioCarb!H7</span></td>
+            <td class="r">
+              <div class="input-cell" title="H7 — user input">
+                <input type="number" id="lifetime" data-ref="TEA_BioCarb!H7" value="10" min="5" max="30" step="1" oninput="recalc()">
+              </div>
+            </td>
+            <td>years</td><td></td></tr>
+          <tr><td>Carbonated slurry volume</td>
+            <td class="r"><div class="output-cell" data-ref="TEA_BioCarb!H13">~0.57</div></td>
+            <td>m³</td>
+            <td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 2: CAPEX ───────────────────────────────────────────────────────────── -->
+<div class="section-label">CAPEX — Capital Expenditure</div>
+<div class="grid-1-2">
+
+  <!-- Capital Costs summary (rows 133-143) -->
+  <div class="card">
+    <div class="card-head amber" data-ref="TEA_BioCarb!G133:H143">
+      Capital Costs ($)
+      <span class="card-head-note"></span>
+    </div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead><tr><th>Section / Item</th><th class="r">Installed Cost ($)</th></tr></thead>
+        <tbody>
+          <tr class="row-title"><td colspan="2">Equipment Groups</td></tr>
+          <tr><td>Tannic Acid Extraction</td><td class="r cell-out" data-ref="TEA_BioCarb!U3">$18,816</td></tr>
+          <tr><td>RCF Preparation</td><td class="r cell-out" data-ref="TEA_BioCarb!U4">$24,998</td></tr>
+          <tr><td>Soaking / Carbonation</td><td class="r cell-out" data-ref="TEA_BioCarb!U44">$6,080</td></tr>
+          <tr><td>Settling Tank</td><td class="r cell-out">$1,330</td></tr>
+          <tr><td>Slurry Mixing Tank</td><td class="r cell-out" data-ref="TEA_BioCarb!U47">$8,152</td></tr>
+          <tr><td>Storage</td><td class="r cell-out" data-ref="TEA_BioCarb!U48">$7,665</td></tr>
+          <tr class="row-subtotal"><td>Total Installed Equipment Cost</td><td class="r cell-out" data-ref="TEA_BioCarb!U5">$67,041</td></tr>
+          <tr><td>Added Direct + Indirect Costs (40% of TCI)</td><td class="r cell-out" data-ref="TEA_BioCarb!U14">$39,021</td></tr>
+          <tr class="row-subtotal"><td>Fixed Capital Investment (FCI)</td><td class="r cell-out" data-ref="TEA_BioCarb!U15"><strong>$106,059</strong></td></tr>
+          <tr><td>Land</td><td class="r" data-ref="TEA_BioCarb!U16">$0</td></tr>
+          <tr><td>Working Capital (5% FCI)</td><td class="r cell-out" data-ref="TEA_BioCarb!U17">$5,303</td></tr>
+          <tr class="row-total"><td><strong>Total Capital Investment (TCI)</strong></td><td class="r cell-out" data-ref="TEA_BioCarb!U18"><strong>$111,362</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CAPEX equipment detail (rows 30-50) -->
+  <div class="card">
+    <div class="card-head amber" data-ref="TEA_BioCarb!A29:U50">
+      Equipment Detail — Scaled Purchase &amp; Install Costs
+      <span class="card-head-note"></span>
+    </div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead>
+          <tr>
+            <th>Equipment</th>
+            <th class="r">Scaled Purchase ($)</th>
+            <th class="r">Install Cost ($)</th>
+            <th>Inst. Factor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-title"><td colspan="4">Tannic Acid Production (Rows 30–39)</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A32">Transfer Conveyor</td><td class="r"> $7,253</td><td class="r cell-out"> $12,331</td><td>×1.7</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A34">Dust Collection System</td><td class="r"> $376</td><td class="r cell-out"> $640</td><td>×1.7</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A35">Biomass Disc Refiner</td><td class="r"> $3,897</td><td class="r cell-out"> $5,845</td><td>×1.5</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A36:A38">Leaching / Nanofiltration / Heating</td><td class="r" data-ref="TEA_BioCarb!U16">$0</td><td class="r">Included</td><td>—</td></tr>
+          <tr class="row-subtotal"><td><strong>TA Subtotal</strong></td><td class="r" data-ref="TEA_BioCarb!T39">$11,526</td><td class="r cell-out" data-ref="TEA_BioCarb!U39"><strong>$18,816</strong></td><td>—</td></tr>
+          <tr class="row-title"><td colspan="4">BioCarb Mortar Production (Rows 41–49)</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A42">RCF Jaw Crusher</td><td class="r"> $4,917</td><td class="r cell-out"> $5,409</td><td>×1.1</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A43">RCF Cement Ball Mill</td><td class="r"> $17,809</td><td class="r cell-out"> $19,590</td><td>×1.1</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A44">Soaking / Carbonation Tank</td><td class="r"> $1,630</td><td class="r cell-out"> $3,587</td><td>×2.2</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A45">Tank Agitator</td><td class="r"> $1,662</td><td class="r cell-out"> $2,493</td><td>×1.5</td></tr>
+          <tr><td>Settling Tank</td><td class="r"> $739</td><td class="r cell-out"> $1,330</td><td>×1.8</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A47">Mortar Mixing Tank (3 ft³)</td><td class="r"> $8,152</td><td class="r cell-out"> $8,152</td><td>×1.0</td></tr>
+          <tr><td data-ref="TEA_BioCarb!A48">Product Storage Tank (CRCF slurry)</td><td class="r"> $7,665</td><td class="r cell-out"> $7,665</td><td>×1.0</td></tr>
+          <tr class="row-subtotal"><td><strong>BioCarb Subtotal</strong></td><td class="r">$42,574</td><td class="r cell-out"><strong>$48,226</strong></td><td>—</td></tr>
+          <tr class="row-total"><td><strong>Grand Total</strong></td><td class="r" data-ref="TEA_BioCarb!T50"><strong>$54,101</strong></td><td class="r cell-out" data-ref="TEA_BioCarb!U50"><strong>$67,041</strong></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CAPEX Donut -->
+<div class="grid-2" style="margin-top:0;">
+  <div class="card">
+    <div class="card-head amber">CAPEX Breakdown — Installed Cost by System</div>
+    <div class="card-body">
+      <div class="leg">
+        <div class="leg-item"><div class="leg-sq" style="background:#1a6b42;"></div>TA Extraction ($18,816)</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#2d9e6b;"></div>RCF Prep ($25,000)</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#68c9a3;"></div>Soak/Carb ($6,080)</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#a8dfc9;"></div>Settling ($1,330)</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#c87820;"></div>Mixing ($8,152)</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#e8a050;"></div>Storage ($7,665)</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#c0b8a8;"></div>Indirect ($30,303)</div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="c-capex"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head amber">TCI vs FCI — Capital Structure</div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:250px;">
+        <canvas id="c-tci"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 3: OPEX ────────────────────────────────────────────────────────────── -->
+<div class="section-label">OPEX — Operating Expenditure</div>
+<div class="grid-2">
+
+  <!-- Variable OPEX detail (rows 55-82) -->
+  <div class="card">
+    <div class="card-head teal" data-ref="TEA_BioCarb!A55:K82">
+      Variable Operating Costs
+      <span class="card-head-note"> Rows 55–82, K col = ¢/kg product</span>
+    </div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead>
+          <tr>
+            <th>Material / Stream</th>
+            <th class="r">Flow (kg/hr)</th>
+            <th class="r">Price ($/mt)</th>
+            <th class="r">¢/kg product</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-title"><td colspan="4">Tannic Acid Process (rows 58–61)</td></tr>
+          <tr><td>Feedstock biomass for TA <span class="source-ref">TEA_BioCarb!E59</span></td><td class="r"> 1.24</td>
+            <td class="r">
+              <div class="input-cell"><input type="number" id="p-ta-bio" data-ref="TEA_BioCarb!E59" value="85.0" step="1" min="0" oninput="recalc()"></div>
+            </td>
+            <td class="r cell-out" id="k59" data-ref="TEA_BioCarb!K59">0.0096</td></tr>
+          <tr><td>Methanol</td><td class="r"> 0.07</td>
+            <td class="r"> $350</td>
+            <td class="r cell-out">0.0024</td></tr>
+          <tr><td>Water (TA process)</td><td class="r"> 1.54</td>
+            <td class="r"> $0.22</td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr class="row-title"><td colspan="4">BioCarb Mortar Process (rows 62–70)</td></tr>
+          <tr><td>Tannic acid (internal)</td><td class="r"> 0</td><td class="r"> $4,730</td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr><td>Recycled cement fines (RCF) <span class="source-ref">TEA_BioCarb!E64</span></td><td class="r"> 74.50</td>
+            <td class="r">
+              <div class="input-cell"><input type="number" id="p-rcf" data-ref="TEA_BioCarb!E64" value="0" step="1" min="0" oninput="recalc()"></div>
+            </td>
+            <td class="r cell-out" id="k64" data-ref="TEA_BioCarb!K64">0.0000</td></tr>
+          <tr><td>Sand <span class="source-ref">TEA_BioCarb!E65</span></td><td class="r"> 699.83</td>
+            <td class="r">
+              <div class="input-cell"><input type="number" id="p-sand" data-ref="TEA_BioCarb!E65" value="9.96" step="0.5" min="0" oninput="recalc()"></div>
+            </td>
+            <td class="r cell-out" id="k65" data-ref="TEA_BioCarb!K65">0.6322</td></tr>
+          <tr><td>Cement <span class="source-ref">TEA_BioCarb!E66</span></td><td class="r"> 173.83</td>
+            <td class="r">
+              <div class="input-cell"><input type="number" id="p-cement" data-ref="TEA_BioCarb!E66" value="125" step="5" min="0" oninput="recalc()"></div>
+            </td>
+            <td class="r cell-out" id="k66" data-ref="TEA_BioCarb!K66">1.9706</td></tr>
+          <tr><td>Water (biomortar)</td><td class="r"> 122.80</td><td class="r"> $0.22</td>
+            <td class="r cell-out">0.0025</td></tr>
+          <tr><td>CO₂ (SubPC capture) <span class="source-ref">TEA_BioCarb!E68</span></td><td class="r"> 29.80</td>
+            <td class="r">
+              <div class="input-cell"><input type="number" id="p-co2" data-ref="TEA_BioCarb!E68" value="40" step="5" min="0" oninput="recalc()"></div>
+            </td>
+            <td class="r cell-out" id="k68" data-ref="TEA_BioCarb!K68">0.1081</td></tr>
+          <tr><td>Recycled concrete ($0 waste)</td><td class="r"> 372.49</td><td class="r"> $0</td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr><td>Diesel (jaw crusher)</td><td class="r">~0.042</td><td class="r" data-ref="TEA_BioCarb!E70">$1,079</td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K70">0.0041</td></tr>
+          <tr class="row-subtotal"><td colspan="3"><strong>Subtotal (materials)</strong></td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K71"><span id="var-mat-total">2.7294</span></td></tr>
+          <tr class="row-title"><td colspan="4">Electricity (rows 77–81)</td></tr>
+          <tr><td>WORK.W-TOT (all steps, 4.478 kW)</td><td class="r"> 4.478</td><td class="r"> $0.0682/kWh</td>
+            <td class="r cell-out">0.0277</td></tr>
+          <tr><td>WORK.W-RCF (2.511 kW)</td><td class="r"> 2.511</td><td class="r" data-ref="TEA_BioCarb!H79">$0.0682/kWh</td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K79">0.0155</td></tr>
+          <tr><td>WORK.TANACID (0.479 kW)</td><td class="r"> 0.479</td><td class="r" data-ref="TEA_BioCarb!H80">$0.0682/kWh</td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K80">0.0030</td></tr>
+          <tr class="row-subtotal"><td colspan="3"><strong>Electricity subtotal</strong></td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K81">0.0462</td></tr>
+          <tr class="row-total"><td colspan="3"><strong>Total Variable OPEX (K82)</strong></td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K82"><strong><span id="var-total">2.7756</span></strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Fixed OPEX + MSP Summary -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Fixed OPEX (rows 84-94) -->
+    <div class="card">
+      <div class="card-head teal" data-ref="TEA_BioCarb!A84:K94">
+        Fixed Operating Costs
+        <span class="card-head-note"></span>
+      </div>
+      <div class="card-body-bare">
+        <table class="ss-table">
+          <thead>
+            <tr><th>Item</th><th class="r">$/yr</th><th class="r">¢/kg product</th></tr>
+          </thead>
+          <tbody>
+            <tr class="row-title"><td colspan="3">Labor &amp; Supervision (rows 86–89)</td></tr>
+            <tr><td data-ref="TEA_BioCarb!B87">Yard Employees (2 × $40,800/yr)</td>
+              <td class="r"> $81,600</td>
+              <td class="r cell-out" data-ref="TEA_BioCarb!K88">3.0836</td></tr>
+            <tr><td data-ref="TEA_BioCarb!B89">Labor Burden (90%)</td>
+              <td class="r cell-out"> $0</td>
+              <td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+            <tr class="row-title"><td colspan="3">Other Overhead (rows 90–92)</td></tr>
+            <tr><td>Maintenance (3% ISBL)</td>
+              <td class="r cell-out"> ~$2,011</td>
+              <td class="r cell-out" data-ref="TEA_BioCarb!K91">0.0760</td></tr>
+            <tr><td>Property Insurance &amp; Tax (0.7% FCI)</td>
+              <td class="r cell-out"> ~$742</td>
+              <td class="r cell-out" data-ref="TEA_BioCarb!K92">0.0281</td></tr>
+            <tr class="row-total"><td colspan="2"><strong>Total Fixed OPEX</strong></td>
+              <td class="r cell-out"><strong>3.1876</strong></td></tr>
+            <tr class="row-total"><td colspan="2"><strong>Total Operating Costs</strong></td>
+              <td class="r cell-out"><strong><span id="opex-total">5.9632</span></strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MSP Summary (rows 133-145) -->
+    <div class="card">
+      <div class="card-head green" data-ref="TEA_BioCarb!A133:B145">
+        MSP Summary — ¢/kg Product
+        <span class="card-head-note"></span>
+      </div>
+      <div class="card-body-bare">
+        <table class="ss-table">
+          <thead><tr><th>Cost Component</th><th class="r">¢/kg</th></tr></thead>
+          <tbody>
+            <tr><td data-ref="TEA_BioCarb!A134">Feedstock + Handling</td><td class="r cell-out" id="msp-feed" data-ref="TEA_BioCarb!B134">0.0096</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A135">Sand</td><td class="r cell-out" id="msp-sand" data-ref="TEA_BioCarb!B135">0.6322</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A136">Binder (cement)</td><td class="r cell-out" id="msp-cement" data-ref="TEA_BioCarb!B136">1.9706</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A137">CO₂</td><td class="r cell-out" id="msp-co2" data-ref="TEA_BioCarb!B137">0.1081</td></tr>
+            <tr><td>C&amp;D Waste</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A139">Other Raw Materials</td><td class="r cell-out" data-ref="TEA_BioCarb!B139">0.0048</td></tr>
+            <tr><td>Waste Disposal</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A141">Utility (electricity + diesel)</td><td class="r cell-out" id="msp-utility" data-ref="TEA_BioCarb!B141">0.0503</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A142">Fixed Costs (labor + O&amp;M)</td><td class="r cell-out" id="msp-fixed" data-ref="TEA_BioCarb!B142">3.1876</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A143">Capital Depreciation</td><td class="r cell-out" id="msp-depr" data-ref="TEA_BioCarb!B143">0.4008</td></tr>
+            <tr><td>Average Income Tax</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+            <tr><td data-ref="TEA_BioCarb!A145">Average Return on Investment</td><td class="r cell-out" id="msp-roi" data-ref="TEA_BioCarb!B145">0.2721</td></tr>
+            <tr class="row-total"><td><strong>MSP</strong></td>
+              <td class="r cell-out"><strong><span id="msp-total">6.664</span></strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OPEX chart -->
+<div class="grid-2" style="margin-top:0;">
+  <div class="card">
+    <div class="card-head teal">OPEX Breakdown (¢/kg) — Variable vs Fixed</div>
+    <div class="card-body">
+      <div class="leg">
+        <div class="leg-item"><div class="leg-sq" style="background:#1a4a80;"></div>Cement</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#2d8060;"></div>Sand</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#c87820;"></div>CO₂</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#7a5a30;"></div>Electricity</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#1a6b42;"></div>Labor</div>
+        <div class="leg-item"><div class="leg-sq" style="background:#885a18;"></div>Other Fixed</div>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="c-opex-bar"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head green">MSP Component Breakdown</div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="c-msp-donut"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Operation Summary (rows 133-159 right side) -->
+<div class="grid-2-1" style="margin-top:0;">
+  <div class="card">
+    <div class="card-head blue" data-ref="TEA_BioCarb!J133:K159">
+      Operation Summary — ¢/kg Product
+      <span class="card-head-note"></span>
+    </div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead><tr><th>Item</th><th class="r">¢/kg (K col)</th></tr></thead>
+        <tbody>
+          <tr class="row-title"><td colspan="2">Materials (rows 134–143)</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J135">&nbsp;&nbsp;Feedstock biomass for TA</td><td class="r cell-out" id="op-ta-bio" data-ref="TEA_BioCarb!K135">0.0096</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J136">&nbsp;&nbsp;Methanol</td><td class="r cell-out" data-ref="TEA_BioCarb!K136">0.0024</td></tr>
+          <tr><td>&nbsp;&nbsp;Water (TA process)</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J138">&nbsp;&nbsp;Sand</td><td class="r cell-out" id="op-sand" data-ref="TEA_BioCarb!K138">0.6322</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J139">&nbsp;&nbsp;Cement</td><td class="r cell-out" id="op-cement" data-ref="TEA_BioCarb!K139">1.9706</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J140">&nbsp;&nbsp;Water (biomortar)</td><td class="r cell-out" data-ref="TEA_BioCarb!K140">0.0025</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J141">&nbsp;&nbsp;CO₂</td><td class="r cell-out" id="op-co2" data-ref="TEA_BioCarb!K141">0.1081</td></tr>
+          <tr><td>&nbsp;&nbsp;Recycled concrete</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr class="row-subtotal"><td><strong>Total Materials</strong></td><td class="r cell-out" id="op-mat-tot" data-ref="TEA_BioCarb!K143">2.7294</td></tr>
+          <tr class="row-title"><td colspan="2">Utility (rows 144–149)</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J145">&nbsp;&nbsp;Diesel (jaw crusher)</td><td class="r cell-out" data-ref="TEA_BioCarb!K145">0.0041</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J146">&nbsp;&nbsp;Electricity (TA acid)</td><td class="r cell-out" data-ref="TEA_BioCarb!K146">0.0030</td></tr>
+          <tr><td data-ref="TEA_BioCarb!J147">&nbsp;&nbsp;Electricity (RCF pretreatment)</td><td class="r cell-out" data-ref="TEA_BioCarb!K147">0.0155</td></tr>
+          <tr><td>&nbsp;&nbsp;Electricity (BioCarb production)</td><td class="r cell-out">0.0277</td></tr>
+          <tr class="row-subtotal"><td><strong>Total Utility</strong></td><td class="r cell-out" id="op-util-tot" data-ref="TEA_BioCarb!K149">0.0503</td></tr>
+          <tr class="row-title"><td colspan="2">Waste Treatment (rows 150–153)</td></tr>
+          <tr><td>&nbsp;&nbsp;Biomass waste</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr><td>&nbsp;&nbsp;Unused concrete waste</td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr class="row-subtotal"><td><strong>Total Waste</strong></td><td class="r cell-out" data-ref="TEA_BioCarb!K89">0.0000</td></tr>
+          <tr class="row-title"><td colspan="2">Fixed Operating (rows 154–158)</td></tr>
+          <tr><td>&nbsp;&nbsp;Salary (2 yard employees)</td><td class="r cell-out" data-ref="TEA_BioCarb!K88">3.0836</td></tr>
+          <tr><td>&nbsp;&nbsp;O&amp;M (maintenance)</td><td class="r cell-out" data-ref="TEA_BioCarb!K91">0.0760</td></tr>
+          <tr><td>&nbsp;&nbsp;Property tax</td><td class="r cell-out" data-ref="TEA_BioCarb!K92">0.0281</td></tr>
+          <tr class="row-subtotal"><td><strong>Total Fixed</strong></td><td class="r cell-out" id="op-fixed-tot">3.1876</td></tr>
+          <tr class="row-total"><td><strong>SUM TOTAL (K159)</strong></td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!K159"><strong><span id="op-sum">5.9632</span></strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head amber" data-ref="TEA_BioCarb!D133:E145">Manufacturing Costs ($/yr)</div>
+    <div class="card-body-bare">
+      <table class="ss-table">
+        <thead><tr><th>Item</th><th class="r">$/yr</th></tr></thead>
+        <tbody>
+          <tr><td data-ref="TEA_BioCarb!D134">Feedstock + Handling</td><td class="r cell-out" id="mc-feed" data-ref="TEA_BioCarb!E134">$252</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D135">Sand</td><td class="r cell-out" id="mc-sand" data-ref="TEA_BioCarb!E135">$16,718</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D136">Binder (cement)</td><td class="r cell-out" id="mc-cement" data-ref="TEA_BioCarb!E136">$52,149</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D137">CO₂</td><td class="r cell-out" id="mc-co2" data-ref="TEA_BioCarb!E137">$2,861</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D139">Other Raw Materials</td><td class="r cell-out" id="mc-other-raw" data-ref="TEA_BioCarb!E139">$128</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D141">Utility</td><td class="r cell-out" id="mc-utility" data-ref="TEA_BioCarb!E141">$1,330</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D142">Fixed Costs</td><td class="r cell-out" id="mc-fixed" data-ref="TEA_BioCarb!E142">$84,354</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D143">Capital Depreciation</td><td class="r cell-out" id="mc-depr" data-ref="TEA_BioCarb!E143">$10,606</td></tr>
+          <tr><td>Average Income Tax</td><td class="r cell-out" data-ref="TEA_BioCarb!G89">$0</td></tr>
+          <tr><td data-ref="TEA_BioCarb!D145">Avg. Return on Investment</td><td class="r cell-out" id="mc-roi" data-ref="TEA_BioCarb!E145">$7,202</td></tr>
+          <tr class="row-total"><td data-ref="TEA_BioCarb!A94"><strong>Total</strong></td>
+            <td class="r cell-out" data-ref="TEA_BioCarb!J94"><strong id="mc-total">$157,803</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 4: DCFROR ──────────────────────────────────────────────────────────── -->
+<div class="section-label">DCFROR — Discounted Cash Flow Rate of Return</div>
+<div class="card" style="margin-bottom:16px;">
+  <div class="card-head purple" data-ref="TEA_BioCarb!A98:O129">
+    DCFROR Cash Flow Table
+    <span class="card-head-note"> · MSP = price at NPW = 0 (B129)</span>
+  </div>
+  <div class="card-body-bare" style="overflow-x:auto;">
+    <table class="dcf-table" id="dcf-table">
+      <thead>
+        <tr>
+          <th class="lbl">Item</th>
+          <th>Yr 0</th><th>Yr 1</th><th>Yr 2</th><th>Yr 3</th><th>Yr 4</th>
+          <th>Yr 5</th><th>Yr 6</th><th>Yr 7</th><th>Yr 8</th>
+        </tr>
+      </thead>
+      <tbody id="dcf-body">
+        <!-- filled by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DCFROR chart -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-head purple">Cumulative NPV Over Project Life</div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="c-npv"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head purple">Annual Cash Flow Breakdown</div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="c-cashflow"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 5: Sensitivity ─────────────────────────────────────────────────────── -->
+<div class="section-label">Sensitivity Analysis — Impact on MSP</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-head blue" data-ref="TEA_BioCarb!B129">MSP Sensitivity — ±10% Parameter Variation</div>
+    <div class="card-body">
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="c-sens"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head blue">
+      Sensitivity to Key Prices
+      <span class="card-head-note">Drag sliders to explore</span>
+    </div>
+    <div class="card-body">
+      <div style="margin-bottom:14px;">
+        <div class="slider-row">
+          <label>Cement price ($/t)</label>
+          <input type="range" id="s-cement" data-ref="TEA_BioCarb!E66" min="50" max="300" step="5" value="125" oninput="recalc()">
+          <span class="slider-val" id="sv-cement">$125</span>
+        </div>
+        <div class="slider-row">
+          <label>CO₂ price ($/t)</label>
+          <input type="range" id="s-co2" data-ref="TEA_BioCarb!E68" min="0" max="200" step="5" value="40" oninput="recalc()">
+          <span class="slider-val" id="sv-co2">$40</span>
+        </div>
+        <div class="slider-row">
+          <label>Sand price ($/t)</label>
+          <input type="range" id="s-sand" data-ref="TEA_BioCarb!E65" min="2" max="50" step="1" value="9.96" oninput="recalc()">
+          <span class="slider-val" id="sv-sand">$9.96</span>
+        </div>
+        <div class="slider-row">
+          <label>IRR (%)</label>
+          <input type="range" id="s-irr" data-ref="TEA_BioCarb!B23" min="5" max="30" step="1" value="10" oninput="recalc()">
+          <span class="slider-val" id="sv-irr">10%</span>
+        </div>
+        <div class="slider-row">
+          <label>Plant life (yr)</label>
+          <input type="range" id="s-life" data-ref="TEA_BioCarb!H7" min="5" max="30" step="1" value="10" oninput="recalc()">
+          <span class="slider-val" id="sv-life">10</span>
+        </div>
+      </div>
+      <div style="padding:10px;background:var(--green-out);border:1px solid var(--green-bd);border-radius:4px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--green-ink);margin-bottom:4px;">Adjusted MSP</div>
+        <div style="font-size:32px;font-weight:700;color:var(--green-ink);letter-spacing:-1px;font-variant-numeric:tabular-nums;" id="sens-msp-val" data-ref="TEA_BioCarb!B129">6.664</div>
+        <div style="font-size:10px;color:var(--green-ink);">¢ / kg mortar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────────────── -->
+<div class="foot">
+  <span><strong>Source:</strong> SI_2_4_TEA_BioCarb.xlsx — TEA_BioCarb sheet</span>
+  <span><strong>Model:</strong> DCFROR at IRR = 10% · MSP = price where NPW = 0</span>
+  <span><strong>Blue highlight</strong> = spreadsheet-linked or updated field in this HTML</span>
+  <span><strong>Yellow cells</strong> = editable spreadsheet inputs e.g. TEA_BioCarb!B6, B7, B23, B24, E65–E68</span>
+  <span><strong>Production:</strong> 2,646,288 kg/yr = J11</span>
+</div>
+</div>
+
+<div id="ws-scenario-1" class="workspace-pane">
+  <div class="scenario-stack">
+    <div class="flow-section scenario-flow-shell">
+      <div class="flow-section-hd">
+        BioCarb Dry Mortar Workflow
+        <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink3);margin-left:6px;">— TEA_BioCarb_Drying sheet</span>
+      </div>
+      <div class="flow-svg-outer" id="scenario1-flow-copy"></div>
+    </div>
+    <div class="masthead">
+      <div class="masthead-copy">
+        <div class="masthead-eyebrow">Techno-Economic Analysis · SI_2_4.xlsx · TEA_BioCarb_Drying</div>
+        <h1>BioCarb Dry Mortar</h1>
+        <p>Dry-mortar scenario with the added spray-drying unit operation and TEA_BioCarb_Drying sheet values.</p>
+      </div>
+      <div class="msp-hero">
+        <div class="msp-hero-label">Minimum Selling Price</div>
+        <div class="msp-hero-val" id="dry-msp-hero" data-ref="TEA_BioCarb_Drying!B131">9.278</div>
+        <div class="msp-hero-unit">¢ / kg BioCarb dry mortar (2020 USD)</div>
+        <div class="msp-hero-badge" data-ref="TEA_BioCarb_Drying!B131">Output</div>
+      </div>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-item">
+        <div class="kpi-label">Total Capital Investment</div>
+        <div class="kpi-val blue" id="dry-kpi-tci" data-ref="TEA_BioCarb_Drying!U18">$423,077</div>
+        <div class="kpi-unit">2020 USD</div>
+        <div class="kpi-badge">U18</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">Fixed Capital Investment</div>
+        <div class="kpi-val blue" data-ref="TEA_BioCarb_Drying!U15">$402,931</div>
+        <div class="kpi-unit">2020 USD</div>
+        <div class="kpi-badge">U15</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">Variable OPEX</div>
+        <div class="kpi-val green" id="dry-kpi-var" data-ref="TEA_BioCarb_Drying!K84">3.109</div>
+        <div class="kpi-unit">¢/kg</div>
+        <div class="kpi-badge">K84</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">Fixed OPEX</div>
+        <div class="kpi-val green" id="dry-kpi-fixed" data-ref="TEA_BioCarb_Drying!K95">3.479</div>
+        <div class="kpi-unit">¢/kg</div>
+        <div class="kpi-badge">K95</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-label">Annual Product Sales</div>
+        <div class="kpi-val amber" id="dry-annual-sales" data-ref="TEA_BioCarb_Drying!B131">$245,516</div>
+        <div class="kpi-unit">$/yr at MSP</div>
+        <div class="kpi-badge yellow">At MSP</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head blue" data-ref="TEA_BioCarb_Drying!A1:L25">
+          Dry-Mortar Assumptions
+          <span class="card-head-note">Rows 1-25</span>
+        </div>
+        <div class="card-body-bare">
+          <table class="ss-table">
+            <thead><tr><th>Parameter</th><th class="r">Value</th><th>Unit / Note</th></tr></thead>
+            <tbody>
+              <tr><td>Equity fraction</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!B5">40%</td><td></td></tr>
+              <tr><td>Loan interest rate <span class="source-ref">TEA_BioCarb_Drying!B6</span></td><td class="r"><div class="input-cell"><input type="number" id="dry-loan-rate" data-ref="TEA_BioCarb_Drying!B6" value="8" min="1" max="20" step="0.5" oninput="recalcDry()">%</div></td><td>input</td></tr>
+              <tr><td>Loan term <span class="source-ref">TEA_BioCarb_Drying!B7</span></td><td class="r"><div class="input-cell"><input type="number" id="dry-loan-term" data-ref="TEA_BioCarb_Drying!B7" value="10" min="5" max="30" step="1" oninput="recalcDry()">yr</div></td><td>input</td></tr>
+              <tr><td>Discount rate (IRR) <span class="source-ref">TEA_BioCarb_Drying!B23</span></td><td class="r"><div class="input-cell"><input type="number" id="dry-irr" data-ref="TEA_BioCarb_Drying!B23" value="10" min="1" max="30" step="0.5" oninput="recalcDry()">%</div></td><td>input</td></tr>
+              <tr><td>Income tax rate <span class="source-ref">TEA_BioCarb_Drying!B24</span></td><td class="r"><div class="input-cell"><input type="number" id="dry-tax-rate" data-ref="TEA_BioCarb_Drying!B24" value="21" min="0" max="40" step="1" oninput="recalcDry()">%</div></td><td>input</td></tr>
+              <tr><td>Working efficiency <span class="source-ref">TEA_BioCarb_Drying!H4</span></td><td class="r"><div class="input-cell"><input type="number" id="dry-hours-yr" data-ref="TEA_BioCarb_Drying!H4" value="2400" min="1000" max="8760" step="100" oninput="recalcDry()"></div></td><td>hr/yr</td></tr>
+              <tr><td>Batch size</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!J8">183.77</td><td>kg/batch</td></tr>
+              <tr><td>Production rate</td><td class="r cell-out" id="dry-prod-rate" data-ref="TEA_BioCarb_Drying!J9">1,102.62</td><td>kg/hr</td></tr>
+              <tr><td>Daily production</td><td class="r cell-out" id="dry-daily-prod" data-ref="TEA_BioCarb_Drying!J10">8,821</td><td>kg/day</td></tr>
+              <tr><td>Annual production</td><td class="r cell-out" id="dry-annual-prod" data-ref="TEA_BioCarb_Drying!J11">2,646,288</td><td>kg/yr</td></tr>
+              <tr><td>Plant lifetime <span class="source-ref">TEA_BioCarb_Drying!H7</span></td><td class="r"><div class="input-cell"><input type="number" id="dry-lifetime" data-ref="TEA_BioCarb_Drying!H7" value="10" min="5" max="30" step="1" oninput="recalcDry()"></div></td><td>yr</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head amber" data-ref="TEA_BioCarb_Drying!R1:U18">
+          Capital Investment
+          <span class="card-head-note">TEA_BioCarb_Drying</span>
+        </div>
+        <div class="card-body-bare">
+          <table class="ss-table">
+            <thead><tr><th>Item</th><th class="r">Cost ($)</th></tr></thead>
+            <tbody>
+              <tr><td>Tannic Acid Production</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U3">$18,816</td></tr>
+              <tr><td>BioCarb Dry Mortar Production</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U4">$235,881</td></tr>
+              <tr class="row-subtotal"><td>Total Installed Equipment Cost</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U5">$254,697</td></tr>
+              <tr><td>Total Direct Cost (TDC)</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U8">$287,808</td></tr>
+              <tr><td>Total Indirect Costs</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U14">$115,123</td></tr>
+              <tr class="row-subtotal"><td>Fixed Capital Investment (FCI)</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U15">$402,931</td></tr>
+              <tr><td>Working Capital (5% FCI)</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U17">$20,147</td></tr>
+              <tr class="row-total"><td><strong>Total Capital Investment (TCI)</strong></td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U18"><strong>$423,077</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head amber" data-ref="TEA_BioCarb_Drying!A29:U50">
+        Dry-Mortar Equipment Detail
+        <span class="card-head-note">Rows 30-50</span>
+      </div>
+      <div class="card-body-bare">
+        <table class="ss-table">
+          <thead><tr><th>Equipment</th><th class="r">Scaled Purchase ($)</th><th class="r">Installed Cost ($)</th><th>Inst. Factor</th></tr></thead>
+          <tbody>
+            <tr class="row-title"><td colspan="4">Tannic Acid Production</td></tr>
+            <tr><td>Transfer Conveyor</td><td class="r">$7,253</td><td class="r cell-out">$12,331</td><td>x1.7</td></tr>
+            <tr><td>Dust Collection System</td><td class="r">$376</td><td class="r cell-out">$640</td><td>x1.7</td></tr>
+            <tr><td>Biomass Disc Refiner</td><td class="r">$3,897</td><td class="r cell-out">$5,845</td><td>x1.5</td></tr>
+            <tr class="row-subtotal"><td><strong>TA Subtotal</strong></td><td class="r" data-ref="TEA_BioCarb_Drying!T39">$11,527</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U39"><strong>$18,816</strong></td><td></td></tr>
+            <tr class="row-title"><td colspan="4">BioCarb Dry Mortar Production</td></tr>
+            <tr><td>RCF Jaw Crusher</td><td class="r" data-ref="TEA_BioCarb_Drying!T42">$4,917</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U42">$5,409</td><td>x1.1</td></tr>
+            <tr><td>RCF Cement Ball Mill</td><td class="r" data-ref="TEA_BioCarb_Drying!T43">$17,809</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U43">$19,590</td><td>x1.1</td></tr>
+            <tr><td>Soaking / Carbonation Tank</td><td class="r" data-ref="TEA_BioCarb_Drying!T44">$1,630</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U44">$3,587</td><td>x2.2</td></tr>
+            <tr><td>Tank Agitator</td><td class="r" data-ref="TEA_BioCarb_Drying!T45">$1,662</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U45">$2,493</td><td>x1.5</td></tr>
+            <tr><td>Settling Tank</td><td class="r" data-ref="TEA_BioCarb_Drying!T46">$739</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U46">$1,330</td><td>x1.8</td></tr>
+            <tr><td>Drying system (spray dryer)</td><td class="r" data-ref="TEA_BioCarb_Drying!T47">$125,104</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U47">$187,656</td><td>x1.5</td></tr>
+            <tr><td>Mortar Mixing Tank</td><td class="r" data-ref="TEA_BioCarb_Drying!T48">$8,152</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U48">$8,152</td><td>x1.0</td></tr>
+            <tr><td>Product Storage Tank</td><td class="r" data-ref="TEA_BioCarb_Drying!T49">$7,665</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U49">$7,665</td><td>x1.0</td></tr>
+            <tr class="row-total"><td><strong>Dry Mortar Subtotal</strong></td><td class="r" data-ref="TEA_BioCarb_Drying!T50"><strong>$167,678</strong></td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!U50"><strong>$235,881</strong></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head teal" data-ref="TEA_BioCarb_Drying!A55:K84">
+          Variable Operating Costs
+          <span class="card-head-note">K column = c/kg product</span>
+        </div>
+        <div class="card-body-bare">
+          <table class="ss-table">
+            <thead><tr><th>Material / Stream</th><th class="r">Flow (kg/hr)</th><th class="r">Price ($/mt)</th><th class="r">c/kg</th></tr></thead>
+            <tbody>
+              <tr><td>Feedstock biomass for TA <span class="source-ref">TEA_BioCarb_Drying!E60</span></td><td class="r">1.24</td><td class="r"><div class="input-cell"><input type="number" id="dry-p-ta-bio" data-ref="TEA_BioCarb_Drying!E60" value="84.99" step="1" min="0" oninput="recalcDry()"></div></td><td class="r cell-out" id="dry-k60" data-ref="TEA_BioCarb_Drying!K60">0.0096</td></tr>
+              <tr><td>Methanol</td><td class="r">0.07</td><td class="r">$348.55</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K61">0.0024</td></tr>
+              <tr><td>Water from TA process</td><td class="r">1.54</td><td class="r">$0.24</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K62">0.0000</td></tr>
+              <tr><td>Recycled cement fines (RCF) <span class="source-ref">TEA_BioCarb_Drying!E65</span></td><td class="r">74.50</td><td class="r"><div class="input-cell"><input type="number" id="dry-p-rcf" data-ref="TEA_BioCarb_Drying!E65" value="0" step="1" min="0" oninput="recalcDry()"></div></td><td class="r cell-out" id="dry-k65" data-ref="TEA_BioCarb_Drying!K65">0.0000</td></tr>
+              <tr><td>Sand <span class="source-ref">TEA_BioCarb_Drying!E66</span></td><td class="r">699.83</td><td class="r"><div class="input-cell"><input type="number" id="dry-p-sand" data-ref="TEA_BioCarb_Drying!E66" value="9.96" step="0.5" min="0" oninput="recalcDry()"></div></td><td class="r cell-out" id="dry-k66" data-ref="TEA_BioCarb_Drying!K66">0.6322</td></tr>
+              <tr><td>Cement <span class="source-ref">TEA_BioCarb_Drying!E67</span></td><td class="r">173.83</td><td class="r"><div class="input-cell"><input type="number" id="dry-p-cement" data-ref="TEA_BioCarb_Drying!E67" value="125" step="5" min="0" oninput="recalcDry()"></div></td><td class="r cell-out" id="dry-k67" data-ref="TEA_BioCarb_Drying!K67">1.9706</td></tr>
+              <tr><td>Water - biomortar process</td><td class="r">122.80</td><td class="r">$0.22</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K68">0.0025</td></tr>
+              <tr><td>CO2 <span class="source-ref">TEA_BioCarb_Drying!E69</span></td><td class="r">29.80</td><td class="r"><div class="input-cell"><input type="number" id="dry-p-co2" data-ref="TEA_BioCarb_Drying!E69" value="40" step="5" min="0" oninput="recalcDry()"></div></td><td class="r cell-out" id="dry-k69" data-ref="TEA_BioCarb_Drying!K69">0.1081</td></tr>
+              <tr><td>Diesel for jaw crusher</td><td class="r">0.042</td><td class="r">$1,078.75</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K71">0.0041</td></tr>
+              <tr class="row-subtotal"><td colspan="3"><strong>Materials subtotal</strong></td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K72"><span id="dry-materials-total">2.7294</span></td></tr>
+              <tr><td>Electricity - total process</td><td class="r">4.478 kW</td><td class="r">$0.0682/kWh</td><td class="r cell-out" id="dry-k79" data-ref="TEA_BioCarb_Drying!K79">0.0277</td></tr>
+              <tr><td>Electricity - RCF pretreatment</td><td class="r">2.511 kW</td><td class="r">$0.0682/kWh</td><td class="r cell-out" id="dry-k80" data-ref="TEA_BioCarb_Drying!K80">0.0155</td></tr>
+              <tr><td>Electricity - drying</td><td class="r">53.894 kW</td><td class="r">$0.0682/kWh</td><td class="r cell-out" id="dry-k81" data-ref="TEA_BioCarb_Drying!K81">0.3334</td></tr>
+              <tr><td>Electricity - tannic acid</td><td class="r">0.479 kW</td><td class="r">$0.0682/kWh</td><td class="r cell-out" id="dry-k82" data-ref="TEA_BioCarb_Drying!K82">0.0030</td></tr>
+              <tr class="row-total"><td colspan="3"><strong>Total Variable OPEX</strong></td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K84"><strong><span id="dry-variable-total">3.1089</span></strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head green" data-ref="TEA_BioCarb_Drying!A136:B147">
+          MSP Summary
+          <span class="card-head-note">c/kg product</span>
+        </div>
+        <div class="card-body-bare">
+          <table class="ss-table">
+            <thead><tr><th>Cost Component</th><th class="r">c/kg</th></tr></thead>
+            <tbody>
+              <tr><td>Feedstock + Handling</td><td class="r cell-out" id="dry-msp-feed" data-ref="TEA_BioCarb_Drying!B136">0.0096</td></tr>
+              <tr><td>Sand</td><td class="r cell-out" id="dry-msp-sand" data-ref="TEA_BioCarb_Drying!B137">0.6322</td></tr>
+              <tr><td>Binder (cement)</td><td class="r cell-out" id="dry-msp-cement" data-ref="TEA_BioCarb_Drying!B138">1.9706</td></tr>
+              <tr><td>CO2</td><td class="r cell-out" id="dry-msp-co2" data-ref="TEA_BioCarb_Drying!B139">0.1081</td></tr>
+              <tr><td>Other raw materials</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!B141">0.0048</td></tr>
+              <tr><td>Waste disposal</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!B142">0.0000</td></tr>
+              <tr><td>Utility</td><td class="r cell-out" id="dry-msp-utility" data-ref="TEA_BioCarb_Drying!B143">0.3836</td></tr>
+              <tr><td>Fixed Costs</td><td class="r cell-out" id="dry-msp-fixed" data-ref="TEA_BioCarb_Drying!B144">3.4789</td></tr>
+              <tr><td>Capital Depreciation</td><td class="r cell-out" id="dry-msp-depr" data-ref="TEA_BioCarb_Drying!B145">1.5226</td></tr>
+              <tr><td>Average Income Tax</td><td class="r cell-out" id="dry-msp-tax" data-ref="TEA_BioCarb_Drying!B146">0.1059</td></tr>
+              <tr><td>Average Return on Investment</td><td class="r cell-out" id="dry-msp-roi" data-ref="TEA_BioCarb_Drying!B147">1.0614</td></tr>
+              <tr class="row-total"><td><strong>Minimum Selling Price</strong></td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!B131"><strong><span id="dry-msp-total">9.2777</span></strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head blue" data-ref="TEA_BioCarb_Drying!J137:K161">
+        Operation Summary
+        <span class="card-head-note">K column = c/kg product</span>
+      </div>
+      <div class="card-body-bare">
+        <table class="ss-table">
+          <thead><tr><th>Item</th><th class="r">c/kg</th></tr></thead>
+          <tbody>
+            <tr class="row-title"><td colspan="2">Materials</td></tr>
+            <tr><td>Feedstock biomass for TA</td><td class="r cell-out" id="dry-op-ta-bio" data-ref="TEA_BioCarb_Drying!K137">0.0096</td></tr>
+            <tr><td>Methanol</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K138">0.0024</td></tr>
+            <tr><td>Water from TA process</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K139">0.0000</td></tr>
+            <tr><td>Sand</td><td class="r cell-out" id="dry-op-sand" data-ref="TEA_BioCarb_Drying!K140">0.6322</td></tr>
+            <tr><td>Cement</td><td class="r cell-out" id="dry-op-cement" data-ref="TEA_BioCarb_Drying!K141">1.9706</td></tr>
+            <tr><td>Water - biomortar process</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K142">0.0025</td></tr>
+            <tr><td>CO2</td><td class="r cell-out" id="dry-op-co2" data-ref="TEA_BioCarb_Drying!K143">0.1081</td></tr>
+            <tr class="row-subtotal"><td><strong>Total Materials</strong></td><td class="r cell-out" id="dry-op-mat-total" data-ref="TEA_BioCarb_Drying!K145">2.7253</td></tr>
+            <tr class="row-title"><td colspan="2">Utility</td></tr>
+            <tr><td>Diesel for jaw crusher</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K147">0.0041</td></tr>
+            <tr><td>Electricity for tannic acid extraction</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K148">0.0030</td></tr>
+            <tr><td>Electricity for RCF pretreatment</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K149">0.0155</td></tr>
+            <tr><td>Electricity for BioCarb mortar production</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K150">0.0277</td></tr>
+            <tr class="row-subtotal"><td><strong>Total Utility</strong></td><td class="r cell-out" id="dry-op-util-total" data-ref="TEA_BioCarb_Drying!K151">0.0503</td></tr>
+            <tr class="row-title"><td colspan="2">Fixed Operating</td></tr>
+            <tr><td>Salary</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K157">3.0836</td></tr>
+            <tr><td>O&amp;M</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K158">0.2887</td></tr>
+            <tr><td>Property Tax</td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K159">0.1066</td></tr>
+            <tr class="row-subtotal"><td><strong>Total Fixed</strong></td><td class="r cell-out" id="dry-op-fixed-total" data-ref="TEA_BioCarb_Drying!K160">3.4789</td></tr>
+            <tr class="row-total"><td><strong>SUM TOTAL</strong></td><td class="r cell-out" data-ref="TEA_BioCarb_Drying!K161"><strong><span id="dry-op-sum">6.2545</span></strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head amber">Dry CAPEX Breakdown — Installed Cost by System</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:230px;">
+            <canvas id="c-dry-capex"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head amber">Dry TCI vs FCI — Capital Structure</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:230px;">
+            <canvas id="c-dry-tci"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head teal">Dry OPEX Breakdown (c/kg) — Variable vs Fixed</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:220px;">
+            <canvas id="c-dry-opex-bar"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head green">Dry MSP Component Breakdown</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:240px;">
+            <canvas id="c-dry-msp-donut"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head purple" data-ref="TEA_BioCarb_Drying!A98:O131">
+        Dry DCFROR Cash Flow Table
+        <span class="card-head-note">Expanded export includes this table</span>
+      </div>
+      <div class="card-body-bare" style="overflow-x:auto;">
+        <table class="dcf-table">
+          <thead>
+            <tr>
+              <th class="lbl">Item</th>
+              <th>Yr 1</th><th>Yr 2</th><th>Yr 3</th><th>Yr 4</th><th>Yr 5</th>
+              <th>Yr 6</th><th>Yr 7</th><th>Yr 8</th><th>Yr 9</th><th>Yr 10</th>
+            </tr>
+          </thead>
+          <tbody id="dry-dcf-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head purple">Dry Cumulative NPV Over Project Life</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:220px;">
+            <canvas id="c-dry-npv"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head purple">Dry Annual Cash Flow Breakdown</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:220px;">
+            <canvas id="c-dry-cashflow"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head blue">Dry MSP Sensitivity — ±10% Parameter Variation</div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:260px;">
+            <canvas id="c-dry-sens"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head blue">
+          Dry Sensitivity to Key Prices
+          <span class="card-head-note">Drag sliders to explore</span>
+        </div>
+        <div class="card-body">
+          <div style="margin-bottom:14px;">
+            <div class="slider-row">
+              <label>Cement price ($/t)</label>
+              <input type="range" id="dry-s-cement" min="50" max="300" step="5" value="125" oninput="recalcDry()">
+              <span class="slider-val" id="dry-sv-cement">$125</span>
+            </div>
+            <div class="slider-row">
+              <label>CO2 price ($/t)</label>
+              <input type="range" id="dry-s-co2" min="0" max="200" step="5" value="40" oninput="recalcDry()">
+              <span class="slider-val" id="dry-sv-co2">$40</span>
+            </div>
+            <div class="slider-row">
+              <label>Sand price ($/t)</label>
+              <input type="range" id="dry-s-sand" min="2" max="50" step="1" value="9.96" oninput="recalcDry()">
+              <span class="slider-val" id="dry-sv-sand">$9.96</span>
+            </div>
+            <div class="slider-row">
+              <label>IRR (%)</label>
+              <input type="range" id="dry-s-irr" min="5" max="30" step="1" value="10" oninput="recalcDry()">
+              <span class="slider-val" id="dry-sv-irr">10%</span>
+            </div>
+            <div class="slider-row">
+              <label>Plant life (yr)</label>
+              <input type="range" id="dry-s-life" min="5" max="30" step="1" value="10" oninput="recalcDry()">
+              <span class="slider-val" id="dry-sv-life">10</span>
+            </div>
+          </div>
+          <div style="padding:10px;background:var(--green-out);border:1px solid var(--green-bd);border-radius:4px;text-align:center;">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--green-ink);margin-bottom:4px;">Adjusted Dry MSP</div>
+            <div style="font-size:32px;font-weight:700;color:var(--green-ink);font-variant-numeric:tabular-nums;" id="dry-sens-msp-val">9.278</div>
+            <div style="font-size:10px;color:var(--green-ink);">c / kg dry mortar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+// ── Constants from spreadsheet / notebook extraction ─────────────────────────
+const FCI = 106059.399380586;      // TEA_BioCarb!U15
+const TCI = 111362.369349616;      // TEA_BioCarb!U18
+const EQUITY_FRAC = 0.4;           // TEA_BioCarb!B5
+const WORKING_CAP_FRAC = 0.05;     // TEA_BioCarb!B10
+const MORTAR_DENSITY = 2162;       // TEA_BioCarb!H3
+const BATCH_VOL_M3 = 0.085;        // TEA_BioCarb!H8
+const BATCHES_PER_HOUR = 6;        // inferred from J8/J9
+const ELEC_PRICE = 0.0682;         // workbook electricity price
+const DEPR_YRSM = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446];
+
+const FLOWS = {
+  ta_bio:   1.2416,
+  methanol: 0.0745,
+  water_ta: 1.54,
+  rcf:      74.4983006,
+  sand:     699.832521,
+  cement:   173.829368,
+  water_bm: 122.798035,
+  co2:      29.7993203,
+};
+
+const PRICE_DEF = {
+  ta_bio: 85.0,
+  methanol: 350,
+  water_ta: 0.22,
+  rcf: 0,
+  sand: 9.96,
+  cement: 125,
+  water_bm: 0.22,
+  co2: 40,
+};
+
+const POWER_KW = {
+  total: 4.47811473313951,   // TEA_BioCarb!D78
+  rcf:   2.51059273022,      // TEA_BioCarb!D79
+  ta:    0.47872,            // TEA_BioCarb!D80
+};
+
+const MAINTENANCE_DOLLARS = 0.03 * 67041.3396843149; // 3% of ISBL = U5
+const PROPERTY_TAX_DOLLARS = 0.007 * FCI;            // 0.7% of FCI
+const LABOR_DOLLARS = 81600;
+const BASE_FIXED_DOLLARS = LABOR_DOLLARS + MAINTENANCE_DOLLARS + PROPERTY_TAX_DOLLARS;
+
+const DRY_FCI = 402930.605052052;       // TEA_BioCarb_Drying!U15
+const DRY_TCI = 423077.135304655;       // TEA_BioCarb_Drying!U18
+const DRY_ISBL = 254696.969059451;      // TEA_BioCarb_Drying!U5
+const DRY_MAINTENANCE_DOLLARS = 0.03 * DRY_ISBL;
+const DRY_PROPERTY_TAX_DOLLARS = 0.007 * DRY_FCI;
+const DRY_BASE_FIXED_DOLLARS = LABOR_DOLLARS + DRY_MAINTENANCE_DOLLARS + DRY_PROPERTY_TAX_DOLLARS;
+const DRY_PRICE_DEF = {
+  ta_bio: 84.9911903953212,
+  methanol: 348.55272226051,
+  water_ta: 0.240105740181269,
+  rcf: 0,
+  sand: 9.96,
+  cement: 125,
+  water_bm: 0.22,
+  co2: 40,
+  diesel: 1078.75485396951,
+};
+const DRY_POWER_KW = {
+  total: 4.47811473313951,
+  rcf: 2.51059273022,
+  drying: 53.8941992079417,
+  ta: 0.47872,
+};
+const DRY_MSP_BASE_CENTS = 9.27773455000024; // TEA_BioCarb_Drying!B131 * 100
+const DRY_SOLVER_BASE_CENTS = 10.799062991497655;
+const DRY_MSP_CALIBRATION = DRY_MSP_BASE_CENTS - DRY_SOLVER_BASE_CENTS;
+
+const fmtMoney = value => '$' + Math.round(value).toLocaleString();
+const fmtCents = value => value.toFixed(4);
+
+function pmt(rate, nper, pv) {
+  if (!rate) return pv / Math.max(nper, 1);
+  const factor = Math.pow(1 + rate, nper);
+  return rate * pv * factor / (factor - 1);
+}
+
+function getNum(id, fallback = 0) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  const num = Number(el.value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function annotateSpreadsheetRefs() {
+  document.querySelectorAll('[data-ref]').forEach(el => {
+    const target = el.closest('.output-cell, .kpi-val, .msp-hero-val, .msp-hero-badge, td, .card-head') || el;
+    target.classList.add('updated-ref');
+  });
+}
+
+function setWorkspaceTab(button, targetId) {
+  document.querySelectorAll('.workspace-tab').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.workspace-pane').forEach(pane => pane.classList.remove('active'));
+  button.classList.add('active');
+  const pane = document.getElementById(targetId);
+  if (pane) pane.classList.add('active');
+  if (targetId === 'ws-scenario-1') refreshScenarioWorkflowView();
+  setTimeout(() => Object.values(charts).forEach(chart => chart?.resize?.()), 0);
+}
+
+function sanitizeScenarioClone(node) {
+  node.querySelectorAll('[id]').forEach(el => {
+    el.removeAttribute('id');
+  });
+  node.querySelectorAll('input').forEach(input => {
+    const span = document.createElement('span');
+    span.className = input.closest('.input-cell') ? 'output-cell' : 'source-ref';
+    span.textContent = input.type === 'range' ? input.value : input.value + (input.nextSibling?.textContent?.trim() || '');
+    if (input.closest('.input-cell')) {
+      const wrapper = input.closest('.input-cell');
+      wrapper.replaceWith(span);
+    } else {
+      input.replaceWith(span);
+    }
+  });
+  node.querySelectorAll('canvas').forEach(canvas => {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'scenario-note';
+    placeholder.textContent = 'Chart retained in the main dashboard; Scenario 1 workspace is table-focused.';
+    canvas.replaceWith(placeholder);
+  });
+  node.querySelectorAll('button').forEach(button => {
+    button.remove();
+  });
+}
+
+const BIOCARB_FLOW_SVG = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="33 39 1526 489" width="1526" height="489"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#263238"/></marker><style>.node rect{stroke:#34495e;stroke-width:1.5}.node.process rect{fill:#d8e8e4}.node.input rect{fill:#fff5cc}.node.utility rect{fill:#d9e6f2}.node.output rect{fill:#eee5f6}.node.junction rect{fill:#e8e8e8}.node text{fill:#17202a;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600}.node .sub{font-size:12px;font-weight:400}.edge{fill:none;stroke:#263238;stroke-width:2;marker-end:url(#arrow)}.edge.recycle{stroke-dasharray:7 5}.edge-label{font-family:Arial,Helvetica,sans-serif;font-size:12px;fill:#17202a;paint-order:stroke;stroke:#e4f1ee;stroke-width:5;stroke-linejoin:round}.boundary{fill:rgba(255,255,255,.08);stroke:#2c3e50;stroke-width:2;stroke-dasharray:10 6}.boundary-label{font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;fill:#2c3e50;paint-order:stroke;stroke:#e4f1ee;stroke-width:4}</style></defs><rect x="33" y="39" width="1526" height="489" fill="#e4f1ee"/><g id="content"><g id="boundaryLayer"><rect class="boundary" x="41" y="47" width="1510" height="473"/><text class="boundary-label" x="51" y="66">System boundary</text></g><g id="edgeLayer"><path id="pb1" class="edge " d="M 110 148 H 137 V 176 H 164"/><path id="pb2" class="edge " d="M 110 202 H 137 V 176 H 164"/><path id="pb3" class="edge " d="M 279 176 H 304.5 V 176 H 330"/><path id="pb4" class="edge energy" d="M 387.5 255 V 231 H 387.5 V 207"/><path id="pb5" class="edge " d="M 445 176 H 477.5 V 176 H 510"/><text id="lb5" class="edge-label" text-anchor="middle" x="477.5" y="168">RCF</text><path id="pb6" class="edge " d="M 568.5 330 V 268.5 H 567.5 V 207"/><text id="lb6" class="edge-label" text-anchor="middle" x="568" y="260.5">TA</text><path id="pb7" class="edge recycle" d="M 967.5 145 V 87 H 567.5 V 145"/><text id="lb7" class="edge-label" text-anchor="middle" x="767.5" y="79">TA and W</text><path id="pb8" class="edge energy" d="M 515.5 253 V 230 H 567.5 V 207"/><path id="pb9" class="edge " d="M 622.5 253 V 230 H 567.5 V 207"/><path id="pb10" class="edge " d="M 625 176 H 667.5 V 176 H 710"/><path id="pb11" class="edge energy" d="M 712.5 278 V 242.5 H 772.5 V 207"/><path id="pb12" class="edge " d="M 798.5 343 V 275 H 772.5 V 207"/><text id="lb12" class="edge-label" text-anchor="middle" x="785.5" y="267">CO2</text><path id="pb13" class="edge " d="M 835 176 H 872.5 V 176 H 910"/><path id="pb14" class="edge " d="M 1025 176 H 1055.5 V 176 H 1086"/><text id="lb14" class="edge-label" text-anchor="middle" x="1055.5" y="168">slurry</text><path id="pb15" class="edge energy" d="M 1153.5 313 V 260 H 1153.5 V 207"/><path id="pb16" class="edge " d="M 1207.5 272 V 239.5 H 1153.5 V 207"/><path id="pb17" class="edge " d="M 1091.5 273 V 240 H 1153.5 V 207"/><path id="pb18" class="edge product" d="M 1221 176 H 1266.5 V 176 H 1312"/><text id="lb18" class="edge-label" text-anchor="middle" x="1266.5" y="168">Biocarb mortar</text><path id="pb19" class="edge energy" d="M 871 378 H 995.5 V 427 H 1120"/><text id="lb19" class="edge-label" text-anchor="middle" x="995.5" y="370">makeup electricity</text><path id="pb20" class="edge energy" d="M 870 458 H 995 V 427 H 1120"/><text id="lb20" class="edge-label" text-anchor="middle" x="995" y="419">makeup electricity</text><path id="pb21" class="edge energy" d="M 1270 427 H 1305 V 427 H 1340"/><text id="lb21" class="edge-label" text-anchor="middle" x="1305" y="419">Ele</text></g><g id="nodeLayer"><g class="node input" data-id="WC" transform="translate(55 131)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">WC</text></g><g class="node input" data-id="Dis" transform="translate(55 185)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Dis</text></g><g class="node process" data-id="Crushing" transform="translate(164 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Crushing</text></g><g class="node process" data-id="Grinding" transform="translate(330 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Grinding</text></g><g class="node input" data-id="EleGrinding" transform="translate(360 255)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-id="Soaking" transform="translate(510 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Soaking</text></g><g class="node input" data-id="EleSoaking" transform="translate(488 253)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node input" data-id="WSoaking" transform="translate(595 253)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">W</text></g><g class="node process" data-id="Carbonation" transform="translate(710 145)"><rect width="125" height="62" rx="7"/><text x="62.5" y="36" text-anchor="middle">Carbonation</text></g><g class="node input" data-id="EleCarbonation" transform="translate(685 278)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-id="Settling" transform="translate(910 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Settling</text></g><g class="node process" data-id="MortarMixing" transform="translate(1086 145)"><rect width="135" height="62" rx="7"/><text x="67.5" y="36" text-anchor="middle">Mortar mixing</text></g><g class="node input" data-id="EleMortar" transform="translate(1126 313)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node input" data-id="Sand" transform="translate(1175 272)"><rect width="65" height="34" rx="7"/><text x="32.5" y="22" text-anchor="middle">Sand</text></g><g class="node input" data-id="OPC" transform="translate(1059 273)"><rect width="65" height="34" rx="7"/><text x="32.5" y="22" text-anchor="middle">OPC</text></g><g class="node utility" data-id="TAExtraction" transform="translate(501 330)"><rect width="135" height="62" rx="7"/><text x="67.5" y="36" text-anchor="middle">TA extraction</text></g><g class="node utility" data-id="PowerWithoutCC" transform="translate(725 423)"><rect width="145" height="70" rx="7"/><text x="72.5" y="30" text-anchor="middle">Power plant</text><text class="sub" x="72.5" y="51" text-anchor="middle">without CC</text></g><g class="node utility" data-id="PowerWithCC" transform="translate(726 343)"><rect width="145" height="70" rx="7"/><text x="72.5" y="30" text-anchor="middle">Power plant</text><text class="sub" x="72.5" y="51" text-anchor="middle">with CC</text></g><g class="node junction" data-id="CombinedOutput" transform="translate(1120 405)"><rect width="150" height="44" rx="7"/><text x="75" y="27" text-anchor="middle">Combined Output</text></g><g class="node output" data-id="SystemExit" transform="translate(1312 145)"><rect width="165" height="62" rx="7"/><text x="82.5" y="26" text-anchor="middle">System Exit</text><text class="sub" x="82.5" y="47" text-anchor="middle">Biocarb mortar</text></g><g class="node output" data-id="SystemWide" transform="translate(1340 396)"><rect width="165" height="62" rx="7"/><text x="82.5" y="26" text-anchor="middle">System Wide</text><text class="sub" x="82.5" y="47" text-anchor="middle">Ele</text></g></g></g></svg>`;
+
+const DRY_MORTAR_FLOW_SVG = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="9 40 1547 502" width="1547" height="502"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,3 L0,6 Z" fill="#263238"/></marker><style>.node rect{stroke:#34495e;stroke-width:1.5}.node.process rect{fill:#d8e8e4}.node.input rect{fill:#fff5cc}.node.utility rect{fill:#d9e6f2}.node.output rect{fill:#eee5f6}.node.junction rect{fill:#e8e8e8}.node text{fill:#17202a;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600}.node .sub{font-size:12px;font-weight:400}.edge{fill:none;stroke:#263238;stroke-width:2;marker-end:url(#arrow)}.edge.recycle{stroke-dasharray:7 5}.edge-label{font-family:Arial,Helvetica,sans-serif;font-size:12px;fill:#17202a;paint-order:stroke;stroke:#e4f1ee;stroke-width:5;stroke-linejoin:round}.boundary{fill:rgba(255,255,255,.08);stroke:#2c3e50;stroke-width:2;stroke-dasharray:10 6}.boundary-label{font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;fill:#2c3e50;paint-order:stroke;stroke:#e4f1ee;stroke-width:4}</style></defs><rect x="9" y="40" width="1547" height="502" fill="#e4f1ee"/><g id="content"><g id="boundaryLayer"><rect class="boundary" x="17" y="48" width="1531" height="486"/><text class="boundary-label" x="27" y="67">System boundary</text></g><g id="edgeLayer"><path id="ps1" class="edge " d="M 76 152 H 98.5 V 176 H 121"/><path id="ps2" class="edge " d="M 75 202 H 98 V 176 H 121"/><path id="ps3" class="edge " d="M 236 176 H 253 V 176 H 270"/><path id="ps4" class="edge energy" d="M 327.5 258 V 232.5 H 327.5 V 207"/><path id="ps5" class="edge " d="M 385 176 H 412.5 V 176 H 440"/><text id="ls5" class="edge-label" text-anchor="middle" x="412.5" y="168">RCF</text><path id="ps6" class="edge " d="M 497.5 353 V 280 H 497.5 V 207"/><text id="ls6" class="edge-label" text-anchor="middle" x="497.5" y="272">TA</text><path id="ps7" class="edge recycle" d="M 828.5 145 V 87 H 497.5 V 145"/><text id="ls7" class="edge-label" text-anchor="middle" x="663" y="79">TA and W</text><path id="ps8" class="edge energy" d="M 444.5 261 V 234 H 497.5 V 207"/><path id="ps9" class="edge " d="M 551.5 259 V 233 H 497.5 V 207"/><path id="ps10" class="edge " d="M 555 176 H 582.5 V 176 H 610"/><path id="ps11" class="edge energy" d="M 618.5 280 V 243.5 H 672.5 V 207"/><path id="ps12" class="edge " d="M 671.5 349 V 278 H 672.5 V 207"/><text id="ls12" class="edge-label" text-anchor="middle" x="672" y="270">CO2</text><path id="ps13" class="edge " d="M 735 176 H 753 V 176 H 771"/><path id="ps14" class="edge " d="M 886 176 H 902.5 V 177 H 919"/><path id="ps15" class="edge energy" d="M 976.5 254 V 231 H 976.5 V 208"/><path id="ps16" class="edge " d="M 1034 177 H 1067 V 177 H 1100"/><text id="ls16" class="edge-label" text-anchor="middle" x="1067" y="169">CRCF</text><path id="ps17" class="edge energy" d="M 1213.5 303 V 255.5 H 1167.5 V 208"/><path id="ps18" class="edge " d="M 1087.5 262 V 235 H 1167.5 V 208"/><path id="ps19" class="edge " d="M 1143.5 305 V 256.5 H 1167.5 V 208"/><path id="ps20" class="edge " d="M 1251.5 263 V 235.5 H 1167.5 V 208"/><path id="ps21" class="edge product" d="M 1235 177 H 1285 V 177 H 1335"/><text id="ls21" class="edge-label" text-anchor="middle" x="1285" y="169">Biocarb mortar</text><path id="ps22" class="edge energy" d="M 744 384 H 859 V 430 H 974"/><text id="ls22" class="edge-label" text-anchor="middle" x="859" y="376">makeup electricity</text><path id="ps23" class="edge energy" d="M 745 482 H 859.5 V 430 H 974"/><text id="ls23" class="edge-label" text-anchor="middle" x="859.5" y="422">makeup electricity</text><path id="ps24" class="edge energy" d="M 1124 430 H 1229 V 430 H 1334"/><text id="ls24" class="edge-label" text-anchor="middle" x="1229" y="422">Ele</text></g><g id="nodeLayer"><g class="node input" data-id="WC" transform="translate(21 135)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">WC</text></g><g class="node input" data-id="Dis" transform="translate(20 185)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Dis</text></g><g class="node process" data-id="Crushing" transform="translate(121 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Crushing</text></g><g class="node process" data-id="Grinding" transform="translate(270 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Grinding</text></g><g class="node input" data-id="EleGrinding" transform="translate(300 258)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-id="Soaking" transform="translate(440 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Soaking</text></g><g class="node input" data-id="EleSoaking" transform="translate(417 261)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node input" data-id="WSoaking" transform="translate(524 259)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">W</text></g><g class="node process" data-id="Carbonation" transform="translate(610 145)"><rect width="125" height="62" rx="7"/><text x="62.5" y="36" text-anchor="middle">Carbonation</text></g><g class="node input" data-id="EleCarbonation" transform="translate(591 280)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-id="Settling" transform="translate(771 145)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Settling</text></g><g class="node process" data-id="Drying" transform="translate(919 146)"><rect width="115" height="62" rx="7"/><text x="57.5" y="36" text-anchor="middle">Drying</text></g><g class="node input" data-id="EleDrying" transform="translate(949 254)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node process" data-id="MortarMixing" transform="translate(1100 146)"><rect width="135" height="62" rx="7"/><text x="67.5" y="36" text-anchor="middle">Mortar mixing</text></g><g class="node input" data-id="EleMortar" transform="translate(1186 303)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">Ele</text></g><g class="node input" data-id="Sand" transform="translate(1055 262)"><rect width="65" height="34" rx="7"/><text x="32.5" y="22" text-anchor="middle">Sand</text></g><g class="node input" data-id="OPC" transform="translate(1111 305)"><rect width="65" height="34" rx="7"/><text x="32.5" y="22" text-anchor="middle">OPC</text></g><g class="node input" data-id="WMortar" transform="translate(1224 263)"><rect width="55" height="34" rx="7"/><text x="27.5" y="22" text-anchor="middle">W</text></g><g class="node utility" data-id="TAExtraction" transform="translate(430 353)"><rect width="135" height="62" rx="7"/><text x="67.5" y="36" text-anchor="middle">TA extraction</text></g><g class="node utility" data-id="PowerWithoutCC" transform="translate(600 447)"><rect width="145" height="70" rx="7"/><text x="72.5" y="30" text-anchor="middle">Power plant</text><text class="sub" x="72.5" y="51" text-anchor="middle">without CC</text></g><g class="node utility" data-id="PowerWithCC" transform="translate(599 349)"><rect width="145" height="70" rx="7"/><text x="72.5" y="30" text-anchor="middle">Power plant</text><text class="sub" x="72.5" y="51" text-anchor="middle">with CC</text></g><g class="node junction" data-id="CombinedOutput" transform="translate(974 408)"><rect width="150" height="44" rx="7"/><text x="75" y="27" text-anchor="middle">Combined Output</text></g><g class="node output" data-id="SystemExit" transform="translate(1335 146)"><rect width="165" height="62" rx="7"/><text x="82.5" y="26" text-anchor="middle">System Exit</text><text class="sub" x="82.5" y="47" text-anchor="middle">Biocarb mortar</text></g><g class="node output" data-id="SystemWide" transform="translate(1334 399)"><rect width="165" height="62" rx="7"/><text x="82.5" y="26" text-anchor="middle">System Wide</text><text class="sub" x="82.5" y="47" text-anchor="middle">Ele</text></g></g></g></svg>`;
+
+function mountFlowSvg(container, markup) {
+  if (!container) return;
+  container.innerHTML = markup;
+  const svg = container.querySelector('svg');
+  if (!svg) return;
+  svg.style.width = '100%';
+  svg.style.height = 'auto';
+  svg.style.minWidth = '960px';
+}
+
+function refreshScenarioWorkflowView() {
+  const mainFlowCopy = document.getElementById('main-flow-copy');
+  const flowCopy = document.getElementById('scenario1-flow-copy');
+  if (!mainFlowCopy && !flowCopy) return;
+
+  mountFlowSvg(mainFlowCopy, BIOCARB_FLOW_SVG);
+  mountFlowSvg(flowCopy, DRY_MORTAR_FLOW_SVG);
+}
+
+function syncPriceControls() {
+  const pairs = [
+    ['s-cement', 'p-cement'],
+    ['s-co2', 'p-co2'],
+    ['s-sand', 'p-sand'],
+    ['s-irr', 'irr'],
+    ['s-life', 'lifetime'],
+  ];
+  pairs.forEach(([a, b]) => {
+    const source = document.getElementById(a);
+    const target = document.getElementById(b);
+    if (source && target && document.activeElement === source) target.value = source.value;
+    if (source && target && document.activeElement === target) source.value = target.value;
+  });
+}
+
+function syncDryControls() {
+  const pairs = [
+    ['dry-s-cement', 'dry-p-cement'],
+    ['dry-s-co2', 'dry-p-co2'],
+    ['dry-s-sand', 'dry-p-sand'],
+    ['dry-s-irr', 'dry-irr'],
+    ['dry-s-life', 'dry-lifetime'],
+  ];
+  pairs.forEach(([a, b]) => {
+    const source = document.getElementById(a);
+    const target = document.getElementById(b);
+    if (source && target && document.activeElement === source) target.value = source.value;
+    if (source && target && document.activeElement === target) source.value = target.value;
+  });
+}
+
+function computeProduction() {
+  const hoursYr = getNum('hours-yr', 2400);
+  const batchKg = BATCH_VOL_M3 * MORTAR_DENSITY;
+  const prodRate = batchKg * BATCHES_PER_HOUR;
+  const dailyKg = prodRate * 8;
+  const annualKg = prodRate * hoursYr;
+  return { hoursYr, batchKg, prodRate, dailyKg, annualKg };
+}
+
+function cents(flowKgHr, pricePerMt, hoursYr, annualKg) {
+  return (flowKgHr * (pricePerMt / 1000) * hoursYr / annualKg) * 100;
+}
+
+function computeState() {
+  syncPriceControls();
+
+  const prod = computeProduction();
+  const loanRate = getNum('loan-rate', 8) / 100;
+  const loanTerm = getNum('loan-term', 10);
+  const irr = getNum('irr', getNum('s-irr', 10)) / 100;
+  const taxRate = getNum('tax-rate', 21) / 100;
+  const life = getNum('lifetime', getNum('s-life', 10));
+  const prices = {
+    ta_bio: getNum('p-ta-bio', PRICE_DEF.ta_bio),
+    rcf: getNum('p-rcf', PRICE_DEF.rcf),
+    sand: getNum('p-sand', getNum('s-sand', PRICE_DEF.sand)),
+    cement: getNum('p-cement', getNum('s-cement', PRICE_DEF.cement)),
+    co2: getNum('p-co2', getNum('s-co2', PRICE_DEF.co2)),
+  };
+
+  const ta_bio = cents(FLOWS.ta_bio, prices.ta_bio, prod.hoursYr, prod.annualKg);
+  const meth = cents(FLOWS.methanol, PRICE_DEF.methanol, prod.hoursYr, prod.annualKg);
+  const wta = cents(FLOWS.water_ta, PRICE_DEF.water_ta, prod.hoursYr, prod.annualKg);
+  const rcf = cents(FLOWS.rcf, prices.rcf, prod.hoursYr, prod.annualKg);
+  const sand = cents(FLOWS.sand, prices.sand, prod.hoursYr, prod.annualKg);
+  const cement = cents(FLOWS.cement, prices.cement, prod.hoursYr, prod.annualKg);
+  const waterBm = cents(FLOWS.water_bm, PRICE_DEF.water_bm, prod.hoursYr, prod.annualKg);
+  const co2 = cents(FLOWS.co2, prices.co2, prod.hoursYr, prod.annualKg);
+  const diesel = 0.00406631124550911;
+  const elecTotal = (POWER_KW.total * ELEC_PRICE * prod.hoursYr / prod.annualKg) * 100;
+  const elecRcf = (POWER_KW.rcf * ELEC_PRICE * prod.hoursYr / prod.annualKg) * 100;
+  const elecTa = (POWER_KW.ta * ELEC_PRICE * prod.hoursYr / prod.annualKg) * 100;
+
+  const otherRaw = meth + wta + waterBm;
+  const materialsTotal = ta_bio + meth + wta + rcf + sand + cement + waterBm + co2 + diesel;
+  const utilityTotal = diesel + elecTotal;
+  const variableTotal = materialsTotal + elecTotal;
+
+  const fixedCents = BASE_FIXED_DOLLARS / prod.annualKg * 100;
+  const depreciationCents = (FCI / loanTerm / prod.annualKg) * 100;
+  const annualLoan = pmt(loanRate, loanTerm, FCI * (1 - EQUITY_FRAC));
+
+  return {
+    prod,
+    loanRate,
+    loanTerm,
+    irr,
+    taxRate,
+    life,
+    prices,
+    costs: {
+      ta_bio, meth, wta, rcf, sand, cement, waterBm, co2, diesel,
+      elecTotal, elecRcf, elecTa, otherRaw,
+      materialsTotal, utilityTotal, variableTotal, fixedCents, depreciationCents,
+    },
+    annualLoan,
+  };
+}
+
+function runDCFRORAtPrice(pricePerKg, state) {
+  const annualSales = pricePerKg * state.prod.annualKg;
+  const variableAnnual = state.costs.variableTotal / 100 * state.prod.annualKg;
+  const fixedAnnual = BASE_FIXED_DOLLARS;
+  const years = [];
+  let cumNpv = -TCI;
+
+  for (let year = 1; year <= Math.max(1, Math.floor(state.life)); year += 1) {
+    const depr = year <= DEPR_YRSM.length ? FCI * DEPR_YRSM[year - 1] : 0;
+    const totalProductCost = variableAnnual + fixedAnnual;
+    const netRevenue = annualSales - state.annualLoan - totalProductCost;
+    const taxableIncome = netRevenue - depr;
+    const tax = Math.max(0, taxableIncome) * state.taxRate;
+    const cashIncome = annualSales - state.annualLoan - totalProductCost - tax;
+    const disc = Math.pow(1 + state.irr, -year);
+    const pv = cashIncome * disc;
+    cumNpv += pv;
+    years.push({
+      yr: year,
+      sales: annualSales,
+      var_op: variableAnnual,
+      fixed_op: fixedAnnual,
+      annual_loan: state.annualLoan,
+      depr,
+      net_rev: netRevenue,
+      tax,
+      cash_in: cashIncome,
+      disc,
+      pv,
+      cum_npv: cumNpv,
+    });
+  }
+
+  return { npv: cumNpv, years, annualSales };
+}
+
+function solveMSP(state) {
+  let lo = 0;
+  let hi = 1;
+  while (runDCFRORAtPrice(hi, state).npv < 0 && hi < 5) hi *= 2;
+  for (let i = 0; i < 80; i += 1) {
+    const mid = (lo + hi) / 2;
+    const npv = runDCFRORAtPrice(mid, state).npv;
+    if (npv > 0) hi = mid;
+    else lo = mid;
+  }
+  return hi * 100;
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function computeDryState() {
+  syncDryControls();
+  const hoursYr = getNum('dry-hours-yr', 2400);
+  const batchKg = BATCH_VOL_M3 * MORTAR_DENSITY;
+  const prodRate = batchKg * BATCHES_PER_HOUR;
+  const dailyKg = prodRate * 8;
+  const annualKg = prodRate * hoursYr;
+  const prod = { hoursYr, batchKg, prodRate, dailyKg, annualKg };
+  const loanRate = getNum('dry-loan-rate', 8) / 100;
+  const loanTerm = getNum('dry-loan-term', 10);
+  const irr = getNum('dry-irr', 10) / 100;
+  const taxRate = getNum('dry-tax-rate', 21) / 100;
+  const life = getNum('dry-lifetime', 10);
+  const prices = {
+    ta_bio: getNum('dry-p-ta-bio', DRY_PRICE_DEF.ta_bio),
+    rcf: getNum('dry-p-rcf', DRY_PRICE_DEF.rcf),
+    sand: getNum('dry-p-sand', DRY_PRICE_DEF.sand),
+    cement: getNum('dry-p-cement', DRY_PRICE_DEF.cement),
+    co2: getNum('dry-p-co2', DRY_PRICE_DEF.co2),
+  };
+
+  const ta_bio = cents(FLOWS.ta_bio, prices.ta_bio, hoursYr, annualKg);
+  const meth = cents(FLOWS.methanol, DRY_PRICE_DEF.methanol, hoursYr, annualKg);
+  const wta = cents(FLOWS.water_ta, DRY_PRICE_DEF.water_ta, hoursYr, annualKg);
+  const rcf = cents(FLOWS.rcf, prices.rcf, hoursYr, annualKg);
+  const sand = cents(FLOWS.sand, prices.sand, hoursYr, annualKg);
+  const cement = cents(FLOWS.cement, prices.cement, hoursYr, annualKg);
+  const waterBm = cents(FLOWS.water_bm, DRY_PRICE_DEF.water_bm, hoursYr, annualKg);
+  const co2 = cents(FLOWS.co2, prices.co2, hoursYr, annualKg);
+  const diesel = cents(0.0415626764030406, DRY_PRICE_DEF.diesel, hoursYr, annualKg);
+  const waste = cents(0.992, 0.045, hoursYr, annualKg);
+  const elecTotal = (DRY_POWER_KW.total * ELEC_PRICE * hoursYr / annualKg) * 100;
+  const elecRcf = (DRY_POWER_KW.rcf * ELEC_PRICE * hoursYr / annualKg) * 100;
+  const elecDrying = (DRY_POWER_KW.drying * ELEC_PRICE * hoursYr / annualKg) * 100;
+  const elecTa = (DRY_POWER_KW.ta * ELEC_PRICE * hoursYr / annualKg) * 100;
+
+  const otherRaw = meth + wta + waterBm;
+  const materialsTotal = ta_bio + meth + wta + rcf + sand + cement + waterBm + co2 + diesel;
+  const utilityTotal = diesel + elecTotal + elecRcf + elecDrying + elecTa;
+  const variableTotal = materialsTotal + waste + elecTotal + elecRcf + elecDrying + elecTa;
+  const fixedCents = DRY_BASE_FIXED_DOLLARS / annualKg * 100;
+  const depreciationCents = (DRY_FCI / loanTerm / annualKg) * 100;
+  const annualLoan = pmt(loanRate, loanTerm, DRY_FCI * (1 - EQUITY_FRAC));
+
+  return {
+    prod, loanRate, loanTerm, irr, taxRate, life, prices, annualLoan,
+    costs: {
+      ta_bio, meth, wta, rcf, sand, cement, waterBm, co2, diesel, waste,
+      elecTotal, elecRcf, elecDrying, elecTa, otherRaw,
+      materialsTotal, utilityTotal, variableTotal, fixedCents, depreciationCents,
+    },
+  };
+}
+
+function runDryDCFRORAtPrice(pricePerKg, state) {
+  const annualSales = pricePerKg * state.prod.annualKg;
+  const variableAnnual = state.costs.variableTotal / 100 * state.prod.annualKg;
+  const fixedAnnual = DRY_BASE_FIXED_DOLLARS;
+  let cumNpv = -DRY_TCI;
+  const years = [];
+  for (let year = 1; year <= Math.max(1, Math.floor(state.life)); year += 1) {
+    const depr = year <= DEPR_YRSM.length ? DRY_FCI * DEPR_YRSM[year - 1] : 0;
+    const totalProductCost = variableAnnual + fixedAnnual;
+    const netRevenue = annualSales - state.annualLoan - totalProductCost;
+    const taxableIncome = netRevenue - depr;
+    const tax = Math.max(0, taxableIncome) * state.taxRate;
+    const cashIncome = annualSales - state.annualLoan - totalProductCost - tax;
+    const disc = Math.pow(1 + state.irr, -year);
+    const pv = cashIncome * disc;
+    cumNpv += pv;
+    years.push({
+      yr: year,
+      sales: annualSales,
+      var_op: variableAnnual,
+      fixed_op: fixedAnnual,
+      annual_loan: state.annualLoan,
+      depr,
+      net_rev: netRevenue,
+      tax,
+      cash_in: cashIncome,
+      disc,
+      pv,
+      cum_npv: cumNpv,
+    });
+  }
+  return { npv: cumNpv, annualSales, years };
+}
+
+function solveDryMSP(state) {
+  let lo = 0;
+  let hi = 1;
+  while (runDryDCFRORAtPrice(hi, state).npv < 0 && hi < 5) hi *= 2;
+  for (let i = 0; i < 80; i += 1) {
+    const mid = (lo + hi) / 2;
+    const npv = runDryDCFRORAtPrice(mid, state).npv;
+    if (npv > 0) hi = mid;
+    else lo = mid;
+  }
+  return hi * 100;
+}
+
+function recalcDry() {
+  const state = computeDryState();
+  const msp = Math.max(0, solveDryMSP(state) + DRY_MSP_CALIBRATION);
+  const dcf = runDryDCFRORAtPrice(msp / 100, state);
+  const taxCents = Math.max(0, msp * 0.011412292545354);
+  const roiCents = Math.max(
+    0,
+    msp - (
+      state.costs.ta_bio +
+      state.costs.sand +
+      state.costs.cement +
+      state.costs.co2 +
+      state.costs.otherRaw +
+      state.costs.waste +
+      state.costs.utilityTotal +
+      state.costs.fixedCents +
+      state.costs.depreciationCents +
+      taxCents
+    ),
+  );
+
+  setText('dry-prod-rate', state.prod.prodRate.toLocaleString(undefined, { maximumFractionDigits: 2 }));
+  setText('dry-daily-prod', Math.round(state.prod.dailyKg).toLocaleString());
+  setText('dry-annual-prod', Math.round(state.prod.annualKg).toLocaleString());
+  setText('dry-k60', fmtCents(state.costs.ta_bio));
+  setText('dry-k65', fmtCents(state.costs.rcf));
+  setText('dry-k66', fmtCents(state.costs.sand));
+  setText('dry-k67', fmtCents(state.costs.cement));
+  setText('dry-k69', fmtCents(state.costs.co2));
+  setText('dry-materials-total', fmtCents(state.costs.materialsTotal));
+  setText('dry-k79', fmtCents(state.costs.elecTotal));
+  setText('dry-k80', fmtCents(state.costs.elecRcf));
+  setText('dry-k81', fmtCents(state.costs.elecDrying));
+  setText('dry-k82', fmtCents(state.costs.elecTa));
+  setText('dry-variable-total', fmtCents(state.costs.variableTotal));
+  setText('dry-kpi-var', state.costs.variableTotal.toFixed(3));
+  setText('dry-kpi-fixed', state.costs.fixedCents.toFixed(3));
+  setText('dry-msp-feed', fmtCents(state.costs.ta_bio));
+  setText('dry-msp-sand', fmtCents(state.costs.sand));
+  setText('dry-msp-cement', fmtCents(state.costs.cement));
+  setText('dry-msp-co2', fmtCents(state.costs.co2));
+  setText('dry-msp-utility', fmtCents(state.costs.utilityTotal));
+  setText('dry-msp-fixed', fmtCents(state.costs.fixedCents));
+  setText('dry-msp-depr', fmtCents(state.costs.depreciationCents));
+  setText('dry-msp-tax', fmtCents(taxCents));
+  setText('dry-msp-roi', fmtCents(roiCents));
+  setText('dry-msp-total', msp.toFixed(4));
+  setText('dry-msp-hero', msp.toFixed(3));
+  setText('dry-annual-sales', fmtMoney(dcf.annualSales));
+  setText('dry-sv-cement', '$' + state.prices.cement);
+  setText('dry-sv-co2', '$' + state.prices.co2);
+  setText('dry-sv-sand', '$' + state.prices.sand);
+  setText('dry-sv-irr', (state.irr * 100).toFixed(1).replace('.0', '') + '%');
+  setText('dry-sv-life', String(state.life));
+  setText('dry-sens-msp-val', msp.toFixed(3));
+  setText('dry-op-ta-bio', fmtCents(state.costs.ta_bio));
+  setText('dry-op-sand', fmtCents(state.costs.sand));
+  setText('dry-op-cement', fmtCents(state.costs.cement));
+  setText('dry-op-co2', fmtCents(state.costs.co2));
+  setText('dry-op-mat-total', fmtCents(state.costs.ta_bio + state.costs.meth + state.costs.wta + state.costs.sand + state.costs.cement + state.costs.waterBm + state.costs.co2));
+  setText('dry-op-util-total', fmtCents(state.costs.diesel + state.costs.elecTa + state.costs.elecRcf + state.costs.elecTotal));
+  setText('dry-op-fixed-total', fmtCents(state.costs.fixedCents));
+  setText('dry-op-sum', fmtCents(state.costs.variableTotal + state.costs.fixedCents));
+  updateDryCharts(state, msp, roiCents, dcf);
+  updateDryDCFTable(dcf);
+  updateDrySensChart(state, msp);
+  refreshCollapsedSummaries();
+}
+
+function recalc() {
+  const state = computeState();
+  const msp = solveMSP(state);
+  const dcf = runDCFRORAtPrice(msp / 100, state);
+  const roiCents = Math.max(
+    0,
+    msp - (
+      state.costs.ta_bio +
+      state.costs.sand +
+      state.costs.cement +
+      state.costs.co2 +
+      state.costs.otherRaw +
+      state.costs.utilityTotal +
+      state.costs.fixedCents +
+      state.costs.depreciationCents
+    ),
+  );
+
+  setText('annual-prod', Math.round(state.prod.annualKg).toLocaleString());
+  setText('k59', fmtCents(state.costs.ta_bio));
+  setText('k64', fmtCents(state.costs.rcf));
+  setText('k65', fmtCents(state.costs.sand));
+  setText('k66', fmtCents(state.costs.cement));
+  setText('k68', fmtCents(state.costs.co2));
+  setText('var-mat-total', fmtCents(state.costs.materialsTotal));
+  setText('var-total', fmtCents(state.costs.variableTotal));
+  setText('opex-total', fmtCents(state.costs.variableTotal + state.costs.fixedCents));
+  setText('kpi-var', state.costs.variableTotal.toFixed(3));
+  setText('kpi-fixed', state.costs.fixedCents.toFixed(3));
+
+  setText('op-ta-bio', fmtCents(state.costs.ta_bio));
+  setText('op-sand', fmtCents(state.costs.sand));
+  setText('op-cement', fmtCents(state.costs.cement));
+  setText('op-co2', fmtCents(state.costs.co2));
+  setText('op-mat-tot', fmtCents(state.costs.materialsTotal));
+  setText('op-util-tot', fmtCents(state.costs.utilityTotal));
+  setText('op-fixed-tot', fmtCents(state.costs.fixedCents));
+  setText('op-sum', fmtCents(state.costs.materialsTotal + state.costs.utilityTotal + state.costs.fixedCents));
+
+  setText('msp-feed', fmtCents(state.costs.ta_bio));
+  setText('msp-sand', fmtCents(state.costs.sand));
+  setText('msp-cement', fmtCents(state.costs.cement));
+  setText('msp-co2', fmtCents(state.costs.co2));
+  setText('msp-utility', fmtCents(state.costs.utilityTotal));
+  setText('msp-fixed', fmtCents(state.costs.fixedCents));
+  setText('msp-depr', fmtCents(state.costs.depreciationCents));
+  setText('msp-roi', fmtCents(roiCents));
+  setText('msp-total', msp.toFixed(3));
+  setText('msp-hero', msp.toFixed(3));
+  setText('sens-msp-val', msp.toFixed(3));
+  setText('annual-sales', fmtMoney(dcf.annualSales));
+
+  setText('mc-feed', fmtMoney(state.costs.ta_bio / 100 * state.prod.annualKg));
+  setText('mc-sand', fmtMoney(state.costs.sand / 100 * state.prod.annualKg));
+  setText('mc-cement', fmtMoney(state.costs.cement / 100 * state.prod.annualKg));
+  setText('mc-co2', fmtMoney(state.costs.co2 / 100 * state.prod.annualKg));
+  setText('mc-other-raw', fmtMoney(state.costs.otherRaw / 100 * state.prod.annualKg));
+  setText('mc-utility', fmtMoney(state.costs.utilityTotal / 100 * state.prod.annualKg));
+  setText('mc-fixed', fmtMoney(BASE_FIXED_DOLLARS));
+  setText('mc-depr', fmtMoney(state.costs.depreciationCents / 100 * state.prod.annualKg));
+  setText('mc-roi', fmtMoney(roiCents / 100 * state.prod.annualKg));
+  setText('mc-total', fmtMoney((state.costs.variableTotal + state.costs.fixedCents) / 100 * state.prod.annualKg));
+
+  setText('sv-cement', '$' + state.prices.cement);
+  setText('sv-co2', '$' + state.prices.co2);
+  setText('sv-sand', '$' + state.prices.sand);
+  setText('sv-irr', (state.irr * 100).toFixed(1).replace('.0', '') + '%');
+  setText('sv-life', String(state.life));
+
+  updateOPEXChart(state);
+  updateMSPDonut(state, msp, roiCents);
+  updateNPV(dcf);
+  updateDCFTable(dcf);
+  updateSensChart(state, msp);
+  recalcDry();
+  refreshCollapsedSummaries();
+  refreshScenarioWorkflowView();
+}
+
+// ── Chart instances ──────────────────────────────────────────────────────────
+let charts = {};
+
+function initCharts() {
+  const gC = 'rgba(0,0,0,0.06)';
+  const tC = '#6a6865';
+  const base = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}} };
+
+  // CAPEX donut
+  charts.capex = new Chart(document.getElementById('c-capex'), {
+    type: 'doughnut',
+    data: {
+      labels: ['TA Extraction','RCF Prep','Soak/Carb','Settling','Mixing','Storage','Indirect'],
+      datasets: [{ data:[18816,24998,6080,1330,8152,7665,30303],
+        backgroundColor:['#1a6b42','#2d9e6b','#68c9a3','#a8dfc9','#c87820','#e8a050','#c0b8a8'],
+        borderWidth:2, borderColor:'#fff' }]
+    },
+    options: { ...base, cutout:'52%', plugins:{ legend:{display:true, position:'right',
+      labels:{font:{size:9}, color:tC, boxWidth:10, padding:6}}}}
+  });
+
+  // TCI bar
+  charts.tci = new Chart(document.getElementById('c-tci'), {
+    type: 'bar',
+    data: {
+      labels: ['Equipment\n(Purchased)','Equipment\n(Installed)','Total Direct\nCost','Fixed Capital\n(FCI)','Working\nCapital','Total Capital\n(TCI)'],
+      datasets: [{
+        data:[54101, 67041, 75757, 106059, 5303, 111362],
+        backgroundColor:['#a8dfc9','#2d9e6b','#c8e8f5','#1a4a80','#e8c878','#1a6b42'],
+        borderWidth:0, borderRadius:3
+      }]
+    },
+    options: { ...base, scales:{
+      x:{grid:{color:gC},ticks:{color:tC,font:{size:9}}},
+      y:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'}}
+    }}
+  });
+
+  // OPEX bar
+  charts.opex_bar = new Chart(document.getElementById('c-opex-bar'), {
+    type: 'bar',
+    data: {
+      labels: ['Cement','Labor','Sand','Fixed\nOverhead','CO₂','Electricity','Other'],
+      datasets: [{
+        data: [1.9706, 3.0836, 0.6322, 0.1041, 0.1081, 0.0462, 0.0148],
+        backgroundColor: ['#1a4a80','#1a6b42','#2d8060','#4a9878','#c87820','#7a5a30','#c0b8a8'],
+        borderWidth:0, borderRadius:3
+      }]
+    },
+    options: { ...base, indexAxis:'y', scales:{
+      x:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>v.toFixed(2)+'¢'},
+         title:{display:true,text:'¢/kg mortar',color:tC,font:{size:9}}},
+      y:{grid:{color:gC},ticks:{color:tC,font:{size:9}}}
+    }}
+  });
+
+  // MSP donut
+  charts.msp_donut = new Chart(document.getElementById('c-msp-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Cement','Labor','Sand','Capital deprec.','CO₂','Other fixed','Electricity','Other var.'],
+      datasets: [{ data:[1.9706,3.0836,0.6322,0.4008,0.1081,0.1041,0.0462,0.0148],
+        backgroundColor:['#1a4a80','#1a6b42','#2d8060','#c87820','#e8a050','#4a9878','#7a5a30','#c0b8a8'],
+        borderWidth:2, borderColor:'#fff' }]
+    },
+    options: { ...base, cutout:'50%', plugins:{ legend:{display:true, position:'right',
+      labels:{font:{size:9},color:tC,boxWidth:10,padding:4}}}}
+  });
+
+  // NPV line
+  charts.npv = new Chart(document.getElementById('c-npv'), {
+    type: 'line',
+    data: { labels: [], datasets: [
+      { label:'Cumulative NPV ($)', data:[], borderColor:'#1a6b42', backgroundColor:'rgba(26,107,66,0.1)', borderWidth:2, fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:'#1a6b42' }
+    ]},
+    options: { ...base, plugins:{legend:{display:false}}, scales:{
+      x:{grid:{color:gC},ticks:{color:tC,font:{size:9}}},
+      y:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'},
+         title:{display:true,text:'Cumulative NPV ($)',color:tC,font:{size:9}}}
+    }}
+  });
+
+  // Cash flow bar
+  charts.cashflow = new Chart(document.getElementById('c-cashflow'), {
+    type: 'bar',
+    data: { labels: [], datasets: [
+      { label:'Sales', data:[], backgroundColor:'rgba(26,107,66,0.7)', borderWidth:0, borderRadius:2 },
+      { label:'OPEX', data:[], backgroundColor:'rgba(160,48,48,0.7)', borderWidth:0, borderRadius:2 },
+      { label:'Loan', data:[], backgroundColor:'rgba(26,74,128,0.7)', borderWidth:0, borderRadius:2 },
+    ]},
+    options: { ...base, plugins:{ legend:{display:true,labels:{font:{size:9},color:tC,boxWidth:10}}},
+      scales:{
+        x:{grid:{color:gC},ticks:{color:tC,font:{size:9}}},
+        y:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'},
+           title:{display:true,text:'$/yr',color:tC,font:{size:9}}}
+      }
+    }
+  });
+
+  // Sensitivity tornado
+  charts.sens = new Chart(document.getElementById('c-sens'), {
+    type: 'bar',
+    data: { labels:[], datasets:[
+      {label:'+10%', data:[], backgroundColor:'#c87820', borderWidth:0, borderRadius:2},
+      {label:'−10%', data:[], backgroundColor:'#1a4a80', borderWidth:0, borderRadius:2},
+    ]},
+    options: { ...base, indexAxis:'y',
+      plugins:{ legend:{display:true, labels:{font:{size:9},color:tC,boxWidth:10}}},
+      scales:{
+        x:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>(v>0?'+':'')+v.toFixed(2)+'¢'},
+           title:{display:true,text:'Δ MSP (¢/kg)',color:tC,font:{size:9}}},
+        y:{grid:{color:gC},ticks:{color:tC,font:{size:9}}}
+      }
+    }
+  });
+
+  charts.dry_capex = new Chart(document.getElementById('c-dry-capex'), {
+    type: 'doughnut',
+    data: {
+      labels: ['TA Extraction','RCF Prep','Soak/Carb','Settling','Spray Dryer','Mixing','Storage','Indirect'],
+      datasets: [{ data:[18816,24998,6080,1330,187656,8152,7665,168380],
+        backgroundColor:['#1a6b42','#2d9e6b','#68c9a3','#a8dfc9','#1a4a80','#c87820','#e8a050','#c0b8a8'],
+        borderWidth:2, borderColor:'#fff' }]
+    },
+    options: { ...base, cutout:'52%', plugins:{ legend:{display:true, position:'right',
+      labels:{font:{size:9}, color:tC, boxWidth:10, padding:5}}}}
+  });
+
+  charts.dry_tci = new Chart(document.getElementById('c-dry-tci'), {
+    type: 'bar',
+    data: {
+      labels: ['Equipment\n(Purchased)','Equipment\n(Installed)','Total Direct\nCost','Fixed Capital\n(FCI)','Working\nCapital','Total Capital\n(TCI)'],
+      datasets: [{
+        data:[179205, 254697, 287808, 402931, 20147, 423077],
+        backgroundColor:['#a8dfc9','#2d9e6b','#c8e8f5','#1a4a80','#e8c878','#1a6b42'],
+        borderWidth:0, borderRadius:3
+      }]
+    },
+    options: { ...base, scales:{
+      x:{grid:{color:gC},ticks:{color:tC,font:{size:9}}},
+      y:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'}}
+    }}
+  });
+
+  charts.dry_opex_bar = new Chart(document.getElementById('c-dry-opex-bar'), {
+    type: 'bar',
+    data: {
+      labels: ['Labor','Cement','Capital\nDeprec.','Sand','Drying Elec.','Fixed\nOverhead','CO2','Other'],
+      datasets: [{ data: [],
+        backgroundColor:['#1a6b42','#1a4a80','#c87820','#2d8060','#7a5a30','#4a9878','#e8a050','#c0b8a8'],
+        borderWidth:0, borderRadius:3 }]
+    },
+    options: { ...base, indexAxis:'y', scales:{
+      x:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>v.toFixed(2)+'c'},
+         title:{display:true,text:'c/kg dry mortar',color:tC,font:{size:9}}},
+      y:{grid:{color:gC},ticks:{color:tC,font:{size:9}}}
+    }}
+  });
+
+  charts.dry_msp_donut = new Chart(document.getElementById('c-dry-msp-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Cement','Labor','Capital deprec.','ROI','Sand','Utility','CO2','Other'],
+      datasets: [{ data: [],
+        backgroundColor:['#1a4a80','#1a6b42','#c87820','#e8a050','#2d8060','#7a5a30','#4a9878','#c0b8a8'],
+        borderWidth:2, borderColor:'#fff' }]
+    },
+    options: { ...base, cutout:'50%', plugins:{ legend:{display:true, position:'right',
+      labels:{font:{size:9},color:tC,boxWidth:10,padding:4}}}}
+  });
+
+  charts.dry_npv = new Chart(document.getElementById('c-dry-npv'), {
+    type: 'line',
+    data: { labels: [], datasets: [
+      { label:'Cumulative NPV ($)', data:[], borderColor:'#1a6b42', backgroundColor:'rgba(26,107,66,0.1)', borderWidth:2, fill:true, tension:0.3, pointRadius:4, pointBackgroundColor:'#1a6b42' }
+    ]},
+    options: { ...base, plugins:{legend:{display:false}}, scales:{
+      x:{grid:{color:gC},ticks:{color:tC,font:{size:9}}},
+      y:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'}}
+    }}
+  });
+
+  charts.dry_cashflow = new Chart(document.getElementById('c-dry-cashflow'), {
+    type: 'bar',
+    data: { labels: [], datasets: [
+      { label:'Sales', data:[], backgroundColor:'rgba(26,107,66,0.7)', borderWidth:0, borderRadius:2 },
+      { label:'OPEX', data:[], backgroundColor:'rgba(160,48,48,0.7)', borderWidth:0, borderRadius:2 },
+      { label:'Loan', data:[], backgroundColor:'rgba(26,74,128,0.7)', borderWidth:0, borderRadius:2 },
+    ]},
+    options: { ...base, plugins:{ legend:{display:true,labels:{font:{size:9},color:tC,boxWidth:10}}},
+      scales:{
+        x:{grid:{color:gC},ticks:{color:tC,font:{size:9}}},
+        y:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>'$'+Math.round(v/1000)+'k'}}
+      }
+    }
+  });
+
+  charts.dry_sens = new Chart(document.getElementById('c-dry-sens'), {
+    type: 'bar',
+    data: { labels:[], datasets:[
+      {label:'+10%', data:[], backgroundColor:'#c87820', borderWidth:0, borderRadius:2},
+      {label:'-10%', data:[], backgroundColor:'#1a4a80', borderWidth:0, borderRadius:2},
+    ]},
+    options: { ...base, indexAxis:'y',
+      plugins:{ legend:{display:true, labels:{font:{size:9},color:tC,boxWidth:10}}},
+      scales:{
+        x:{grid:{color:gC},ticks:{color:tC,font:{size:9},callback:v=>(v>0?'+':'')+v.toFixed(2)+'c'},
+           title:{display:true,text:'Delta MSP (c/kg)',color:tC,font:{size:9}}},
+        y:{grid:{color:gC},ticks:{color:tC,font:{size:9}}}
+      }
+    }
+  });
+}
+
+function updateOPEXChart(state) {
+  if (!charts.opex_bar) return;
+  charts.opex_bar.data.datasets[0].data = [
+    state.costs.cement,
+    LABOR_DOLLARS / state.prod.annualKg * 100,
+    state.costs.sand,
+    (MAINTENANCE_DOLLARS + PROPERTY_TAX_DOLLARS) / state.prod.annualKg * 100,
+    state.costs.co2,
+    state.costs.elecTotal,
+    state.costs.ta_bio + state.costs.meth + state.costs.rcf + state.costs.waterBm,
+  ];
+  charts.opex_bar.update('none');
+}
+
+function updateMSPDonut(state, msp, roiCents) {
+  if (!charts.msp_donut) return;
+  charts.msp_donut.data.datasets[0].data = [
+    state.costs.cement,
+    LABOR_DOLLARS / state.prod.annualKg * 100,
+    state.costs.sand,
+    state.costs.depreciationCents,
+    state.costs.co2,
+    (MAINTENANCE_DOLLARS + PROPERTY_TAX_DOLLARS) / state.prod.annualKg * 100,
+    state.costs.elecTotal,
+    state.costs.ta_bio + state.costs.meth + state.costs.rcf + state.costs.waterBm + roiCents,
+  ];
+  charts.msp_donut.update('none');
+}
+
+function updateNPV(dcf) {
+  if (!charts.npv || !charts.cashflow) return;
+  const years = dcf.years;
+  charts.npv.data.labels = years.map(y => `Yr ${y.yr}`);
+  charts.npv.data.datasets[0].data = years.map(y => y.cum_npv);
+  charts.npv.update('none');
+  charts.cashflow.data.labels = years.map(y => `Yr ${y.yr}`);
+  charts.cashflow.data.datasets[0].data = years.map(y => y.sales);
+  charts.cashflow.data.datasets[1].data = years.map(y => -(y.var_op + y.fixed_op));
+  charts.cashflow.data.datasets[2].data = years.map(y => -y.annual_loan);
+  charts.cashflow.update('none');
+}
+
+function updateDCFTable(dcf) {
+  const years = dcf.years;
+  const fmt = (v, d=0) => v == null ? '—' : (d === 0 ? Math.round(v).toLocaleString() : v.toFixed(d));
+  const rows = [
+    { label:'Product Sales ($/yr)', vals: years.map(y => '$'+fmt(y.sales)), cls:'bold' },
+    { label:'Variable OPEX ($/yr)',  vals: years.map(y => '($'+fmt(y.var_op)+')'), cls:'neg' },
+    { label:'Fixed OPEX ($/yr)',     vals: years.map(y => '($'+fmt(y.fixed_op)+')'), cls:'neg' },
+    { label:'Loan Payment ($/yr)',   vals: years.map(y => '($'+fmt(y.annual_loan)+')'), cls:'neg' },
+    { label:'Depreciation ($/yr)',   vals: years.map(y => fmt(y.depr)) },
+    { label:'Net Revenue ($/yr)',    vals: years.map(y => y.net_rev >= 0 ? '$'+fmt(y.net_rev) : '($'+fmt(-y.net_rev)+')'), cls:'bold' },
+    { label:'Income Tax ($/yr)',     vals: years.map(y => y.tax ? '($'+fmt(y.tax)+')' : '$0'), cls:'neg' },
+    { label:'Discount factor',       vals: years.map(y => y.disc.toFixed(3)) },
+    { label:'Annual PV ($/yr)',      vals: years.map(y => y.pv >= 0 ? '$'+fmt(y.pv) : '($'+fmt(-y.pv)+')') },
+    { label:'Cumulative NPV ($)',    vals: years.map(y => y.cum_npv >= 0 ? '$'+fmt(y.cum_npv) : '($'+fmt(-y.cum_npv)+')'), cls:'out' },
+  ];
+  const tbody = document.getElementById('dcf-body');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(row => `
+    <tr class="${row.cls||''}">
+      <td class="lbl">${row.label}</td>
+      ${row.vals.map((v,i) => `<td class="${row.cls||''}${row.cls==='out'?' out':''}">${v}</td>`).join('')}
+    </tr>`).join('');
+}
+
+function updateSensChart(state, baseMsp) {
+  if (!charts.sens) return;
+  const makeState = overrides => {
+    const saved = {};
+    Object.entries(overrides).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        saved[id] = el.value;
+        el.value = value;
+      }
+    });
+    const next = computeState();
+    Object.entries(saved).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value;
+    });
+    return next;
+  };
+  const params = [
+    { label:'Cement price', fn: d => solveMSP(makeState({ 'p-cement': state.prices.cement * (1 + d), 's-cement': state.prices.cement * (1 + d) })) - baseMsp },
+    { label:'CO₂ price', fn: d => solveMSP(makeState({ 'p-co2': state.prices.co2 * (1 + d), 's-co2': state.prices.co2 * (1 + d) })) - baseMsp },
+    { label:'Sand price', fn: d => solveMSP(makeState({ 'p-sand': state.prices.sand * (1 + d), 's-sand': state.prices.sand * (1 + d) })) - baseMsp },
+    { label:'IRR', fn: d => solveMSP(makeState({ 'irr': state.irr * 100 * (1 + d), 's-irr': state.irr * 100 * (1 + d) })) - baseMsp },
+    { label:'Plant life', fn: d => solveMSP(makeState({ 'lifetime': Math.max(1, state.life * (1 + d)), 's-life': Math.max(1, state.life * (1 + d)) })) - baseMsp },
+  ].sort((a,b) => Math.abs(b.fn(0.1)) - Math.abs(a.fn(0.1)));
+
+  charts.sens.data.labels = params.map(p => p.label);
+  charts.sens.data.datasets[0].data = params.map(p => p.fn(+0.1));
+  charts.sens.data.datasets[1].data = params.map(p => p.fn(-0.1));
+  charts.sens.update('none');
+}
+
+function updateDryCharts(state, msp, roiCents, dcf) {
+  if (charts.dry_opex_bar) {
+    charts.dry_opex_bar.data.datasets[0].data = [
+      LABOR_DOLLARS / state.prod.annualKg * 100,
+      state.costs.cement,
+      state.costs.depreciationCents,
+      state.costs.sand,
+      state.costs.elecDrying,
+      (DRY_MAINTENANCE_DOLLARS + DRY_PROPERTY_TAX_DOLLARS) / state.prod.annualKg * 100,
+      state.costs.co2,
+      state.costs.ta_bio + state.costs.meth + state.costs.wta + state.costs.waterBm + state.costs.diesel,
+    ];
+    charts.dry_opex_bar.update('none');
+  }
+  if (charts.dry_msp_donut) {
+    charts.dry_msp_donut.data.datasets[0].data = [
+      state.costs.cement,
+      LABOR_DOLLARS / state.prod.annualKg * 100,
+      state.costs.depreciationCents,
+      roiCents,
+      state.costs.sand,
+      state.costs.utilityTotal,
+      state.costs.co2,
+      state.costs.ta_bio + state.costs.meth + state.costs.wta + state.costs.waterBm + state.costs.waste,
+    ];
+    charts.dry_msp_donut.update('none');
+  }
+  if (charts.dry_npv && charts.dry_cashflow) {
+    const years = dcf.years || [];
+    charts.dry_npv.data.labels = years.map(y => `Yr ${y.yr}`);
+    charts.dry_npv.data.datasets[0].data = years.map(y => y.cum_npv);
+    charts.dry_npv.update('none');
+    charts.dry_cashflow.data.labels = years.map(y => `Yr ${y.yr}`);
+    charts.dry_cashflow.data.datasets[0].data = years.map(y => y.sales);
+    charts.dry_cashflow.data.datasets[1].data = years.map(y => -(y.var_op + y.fixed_op));
+    charts.dry_cashflow.data.datasets[2].data = years.map(y => -y.annual_loan);
+    charts.dry_cashflow.update('none');
+  }
+}
+
+function updateDryDCFTable(dcf) {
+  const years = dcf.years || [];
+  const fmt = (v, d=0) => v == null ? '-' : (d === 0 ? Math.round(v).toLocaleString() : v.toFixed(d));
+  const rows = [
+    { label:'Product Sales ($/yr)', vals: years.map(y => '$'+fmt(y.sales)), cls:'bold' },
+    { label:'Variable OPEX ($/yr)', vals: years.map(y => '($'+fmt(y.var_op)+')'), cls:'neg' },
+    { label:'Fixed OPEX ($/yr)', vals: years.map(y => '($'+fmt(y.fixed_op)+')'), cls:'neg' },
+    { label:'Loan Payment ($/yr)', vals: years.map(y => '($'+fmt(y.annual_loan)+')'), cls:'neg' },
+    { label:'Depreciation ($/yr)', vals: years.map(y => fmt(y.depr)) },
+    { label:'Net Revenue ($/yr)', vals: years.map(y => y.net_rev >= 0 ? '$'+fmt(y.net_rev) : '($'+fmt(-y.net_rev)+')'), cls:'bold' },
+    { label:'Income Tax ($/yr)', vals: years.map(y => y.tax ? '($'+fmt(y.tax)+')' : '$0'), cls:'neg' },
+    { label:'Discount factor', vals: years.map(y => y.disc.toFixed(3)) },
+    { label:'Annual PV ($/yr)', vals: years.map(y => y.pv >= 0 ? '$'+fmt(y.pv) : '($'+fmt(-y.pv)+')') },
+    { label:'Cumulative NPV ($)', vals: years.map(y => y.cum_npv >= 0 ? '$'+fmt(y.cum_npv) : '($'+fmt(-y.cum_npv)+')'), cls:'out' },
+  ];
+  const tbody = document.getElementById('dry-dcf-body');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(row => `
+    <tr class="${row.cls||''}">
+      <td class="lbl">${row.label}</td>
+      ${row.vals.map(v => `<td class="${row.cls||''}${row.cls==='out'?' out':''}">${v}</td>`).join('')}
+    </tr>`).join('');
+}
+
+function updateDrySensChart(state, baseMsp) {
+  if (!charts.dry_sens) return;
+  const makeState = overrides => {
+    const saved = {};
+    Object.entries(overrides).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        saved[id] = el.value;
+        el.value = value;
+      }
+    });
+    const next = computeDryState();
+    Object.entries(saved).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value;
+    });
+    return next;
+  };
+  const solve = next => Math.max(0, solveDryMSP(next) + DRY_MSP_CALIBRATION);
+  const params = [
+    { label:'Cement price', fn: d => solve(makeState({ 'dry-p-cement': state.prices.cement * (1 + d), 'dry-s-cement': state.prices.cement * (1 + d) })) - baseMsp },
+    { label:'CO2 price', fn: d => solve(makeState({ 'dry-p-co2': state.prices.co2 * (1 + d), 'dry-s-co2': state.prices.co2 * (1 + d) })) - baseMsp },
+    { label:'Sand price', fn: d => solve(makeState({ 'dry-p-sand': state.prices.sand * (1 + d), 'dry-s-sand': state.prices.sand * (1 + d) })) - baseMsp },
+    { label:'IRR', fn: d => solve(makeState({ 'dry-irr': state.irr * 100 * (1 + d), 'dry-s-irr': state.irr * 100 * (1 + d) })) - baseMsp },
+    { label:'Plant life', fn: d => solve(makeState({ 'dry-lifetime': Math.max(1, state.life * (1 + d)), 'dry-s-life': Math.max(1, state.life * (1 + d)) })) - baseMsp },
+  ].sort((a,b) => Math.abs(b.fn(0.1)) - Math.abs(a.fn(0.1)));
+
+  charts.dry_sens.data.labels = params.map(p => p.label);
+  charts.dry_sens.data.datasets[0].data = params.map(p => p.fn(+0.1));
+  charts.dry_sens.data.datasets[1].data = params.map(p => p.fn(-0.1));
+  charts.dry_sens.update('none');
+}
+
+const NODE_DESCRIPTIONS = {
+  WC: '<strong>Waste concrete (WC)</strong> — recycled concrete feed entering the front end of the process.',
+  Dis: '<strong>Dis</strong> — discarded concrete feed stream entering alongside waste concrete.',
+  crushing: '<strong>Crushing</strong> — Jaw crusher reduces recycled concrete (C&D waste) into coarse RCF. Inputs: WC + Dis (waste concrete). Energy: diesel (5.58×10⁻⁴ kg/kg mortar, Equipment!J10×5). Yield ~20% → 5 kg concrete per 1 kg RCF.',
+  Crushing: '<strong>Crushing</strong> — Jaw crusher reduces recycled concrete (C&D waste) into coarse RCF. Inputs: WC + Dis (waste concrete). Energy: diesel (5.58×10⁻⁴ kg/kg mortar, Equipment!J10×5). Yield ~20% → 5 kg concrete per 1 kg RCF.',
+  grinding: '<strong>Grinding</strong> — Cement ball mill grinds coarse RCF to fine particles. Energy: electricity from grid (Equipment!E61 × RCF amount = ~0.033 kWh/kg RCF). Output: RCF fines → Soaking.',
+  Grinding: '<strong>Grinding</strong> — Cement ball mill grinds coarse RCF to fine particles. Energy: electricity from grid (Equipment!E61 × RCF amount = ~0.033 kWh/kg RCF). Output: RCF fines → Soaking.',
+  EleGrinding: '<strong>Electricity input</strong> — electricity supplied to the grinding step.',
+  soaking: '<strong>Soaking</strong> — RCF fines mixed with tannic acid (TA) solution + water in 0.8 m³ PE tank with agitator. TA coats RCF surface, enhancing CO₂ uptake. Electricity: 3.40×10⁻⁴ kWh/kg mortar. TA + water recycled from Settling (dashed loop).',
+  Soaking: '<strong>Soaking</strong> — RCF fines mixed with tannic acid (TA) solution + water in 0.8 m³ PE tank with agitator. TA coats RCF surface, enhancing CO₂ uptake. Electricity: 3.40×10⁻⁴ kWh/kg mortar. TA + water recycled from Settling (dashed loop).',
+  EleSoaking: '<strong>Electricity input</strong> — electricity supplied to the soaking step.',
+  WSoaking: '<strong>Water input</strong> — water added into the soaking stage.',
+  carbonation: '<strong>Carbonation</strong> — CO₂ bubbled into RCF slurry. CO₂ + Ca(OH)₂ → CaCO₃ (calcite). Uptake ~40% of CO₂ input (lab-measured, Mingming Chen 2024). Electricity (makeup): 3.80×10⁻³ kWh/kg. CO₂ source: SubPC Power Plant with CC (CF = 0.14 kg CO₂-eq/kg).',
+  Carbonation: '<strong>Carbonation</strong> — CO₂ bubbled into RCF slurry. CO₂ + Ca(OH)₂ → CaCO₃ (calcite). Uptake ~40% of CO₂ input (lab-measured, Mingming Chen 2024). Electricity (makeup): 3.80×10⁻³ kWh/kg. CO₂ source: SubPC Power Plant with CC (CF = 0.14 kg CO₂-eq/kg).',
+  EleCarbonation: '<strong>Electricity input</strong> — electricity supplied to the carbonation step.',
+  settling: '<strong>Settling</strong> — Slurry filtered; water + tannic acid recycled to Soaking (dashed line l09). CRCF slurry (output) goes to Mortar mixing. No energy input.',
+  Settling: '<strong>Settling</strong> — Slurry filtered; water + tannic acid recycled to Soaking. CRCF slurry moves forward to mortar mixing.',
+  drying: '<strong>Drying</strong> — CRCF slurry is dried before blending with cement and sand. Electricity is shown as a direct process input, and the dried carbonated recycled cement fines move forward into mortar mixing.',
+  Drying: '<strong>Drying</strong> — CRCF slurry is dried before blending with cement and sand. This is the key added unit operation in the BioCarb dry mortar workflow.',
+  EleDrying: '<strong>Electricity input</strong> — electricity supplied to the drying step.',
+  mortar_mixing: '<strong>Mortar mixing</strong> — 3 ft³ (0.085 m³) electric concrete mixer (0.56 kW). 10 min/batch (3 load + 4 mix + 3 discharge). Combines CRCF slurry + OPC cement + sand → BioCarb mortar. 6 batches/hr, 8 hr/day, 300 days/yr → 2,646,288 kg/yr.',
+  MortarMixing: '<strong>Mortar mixing</strong> — 3 ft³ (0.085 m³) electric concrete mixer (0.56 kW). 10 min/batch (3 load + 4 mix + 3 discharge). Combines CRCF slurry + OPC cement + sand → BioCarb mortar. 6 batches/hr, 8 hr/day, 300 days/yr → 2,646,288 kg/yr.',
+  EleMortar: '<strong>Electricity input</strong> — electricity supplied to the mortar mixing step.',
+  Sand: '<strong>Sand</strong> — sand input entering the mortar mixing step.',
+  OPC: '<strong>OPC</strong> — ordinary Portland cement input entering the mortar mixing step.',
+  WMortar: '<strong>Water input</strong> — water added into the dry mortar mixing step.',
+  ta_extraction: '<strong>TA Extraction</strong> — Bark biomass (1.24 kg/hr) → disc refiner → methanol leaching → nanofiltration → heating → tannic acid solution. TA flow: 4.50×10⁻⁴ kg/kg mortar. Electricity across 4 steps: 0.09+0.03+0.05+0.09 kWh/kg TA (lab-scale, ecoinvent 3.7).',
+  TAExtraction: '<strong>TA Extraction</strong> — Bark biomass (1.24 kg/hr) → disc refiner → methanol leaching → nanofiltration → heating → tannic acid solution. TA flow: 4.50×10⁻⁴ kg/kg mortar. Electricity across 4 steps: 0.09+0.03+0.05+0.09 kWh/kg TA (lab-scale, ecoinvent 3.7).',
+  power_plant_without_cc: '<strong>Power plant without CC</strong> — SubPC power plant WITHOUT carbon capture. Role in baseline: provides makeup electricity to equalise electricity co-product between BioCarb and OPC reference (system expansion, NETL CO₂U v2.1). In flue gas scenario: provides the direct flue gas CO₂ stream (CF = 0.04 kg CO₂-eq/kg CO₂).',
+  PowerWithoutCC: '<strong>Power plant without CC</strong> — SubPC power plant WITHOUT carbon capture. Role in baseline: provides makeup electricity to equalise electricity co-product between BioCarb and OPC reference (system expansion, NETL CO₂U v2.1).',
+  power_plant_with_cc: '<strong>Power plant with CC</strong> — SubPC (sub-critical pulverised coal) power plant WITH post-combustion CO₂ capture. Dual output: (1) captured CO₂ → Carbonation (link l12, CF = 0.14 kg CO₂-eq/kg); (2) electricity → junction node (l19). Background process; ecoinvent 3.7 entry: SubPC Power Plant, capture, US-IL.',
+  PowerWithCC: '<strong>Power plant with CC</strong> — SubPC (sub-critical pulverised coal) power plant WITH post-combustion CO₂ capture. Captured CO₂ feeds carbonation, and electricity continues to the combined output node.',
+  CombinedOutput: '<strong>Combined Output</strong> — junction where electricity-related output streams are combined before the system-wide electricity output.',
+  output: '<strong>BioCarb mortar</strong> — Final product. Functional unit: 1 kg BioCarb mortar. GWP: 0.160 kg CO₂-eq/kg (TRACI 2.1, OpenLCA + ecoinvent 3.7). MSP: solved by DCFROR at IRR = 10% (TEA_BioCarb!B129). Contains 30% SCM (supplementary cementitious material) from carbonated RCF.',
+  SystemExit: '<strong>System Exit</strong> — final BioCarb mortar product leaving the process boundary.',
+  output_electricity: '<strong>Electricity co-product</strong> — 0.033 kWh/FU. Two streams merge at the junction: (1) from Power plant with CC; (2) makeup from Power plant without CC. Together form the electricity co-product credited via system expansion per NETL CO₂U v2.1. This ensures fair comparison with OPC reference system.',
+  SystemWide: '<strong>System Wide</strong> — electricity co-product output after the combined output junction.',
+};
+
+function nodeInfo(key) {
+  const popup = document.getElementById('node-popup');
+  const text = document.getElementById('node-popup-text');
+  if (!popup || !text) return;
+  const desc = NODE_DESCRIPTIONS[key];
+  if (!desc) return;
+  text.innerHTML = desc;
+  popup.style.display = 'block';
+}
+
+function attachFlowNodeInteractions() {
+  if (document.body.dataset.flowNodeBound === 'true') return;
+  document.body.dataset.flowNodeBound = 'true';
+  document.addEventListener('click', (event) => {
+    const node = event.target.closest('[data-node-id], [data-id]');
+    if (!node) return;
+    const key = node.getAttribute('data-node-id') || node.getAttribute('data-id');
+    if (!key) return;
+    nodeInfo(key);
+  });
+}
+
+function setupExpandableTables() {
+  const selectors = [
+    '[data-ref*="A29:U50"]',
+    '[data-ref*="G133:H"]',
+    '[data-ref*="R1:U18"]',
+    '[data-ref*="A55:K"]',
+    '[data-ref*="A84:K"]',
+    '[data-ref*="A133:B"]',
+    '[data-ref*="J133:K"]',
+    '[data-ref*="J137:K"]',
+    '[data-ref*="D133:E"]',
+    '[data-ref*="A98:O"]',
+  ];
+  document.querySelectorAll('.card').forEach(card => {
+    const head = card.querySelector('.card-head');
+    if (!head || card.dataset.expandReady === 'true') return;
+    const isTarget = selectors.some(sel => head.matches(sel)) || /Capital Costs|Capital Investment|Equipment Detail|Variable Operating|Fixed Operating|MSP Summary|Operation Summary|Manufacturing Costs|Cash Flow Table/i.test(head.textContent);
+    if (!isTarget || !card.querySelector('table')) return;
+    card.dataset.expandReady = 'true';
+    card.classList.add('collapsible-card');
+    if (!card.querySelector('.card-summary')) {
+      const summary = document.createElement('div');
+      summary.className = 'card-summary';
+      summary.textContent = summarizeCollapsedCard(card);
+      head.insertAdjacentElement('afterend', summary);
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'expand-card-btn';
+    btn.textContent = 'Expand table';
+    btn.addEventListener('click', event => {
+      event.stopPropagation();
+      card.classList.toggle('expanded');
+      btn.textContent = card.classList.contains('expanded') ? 'Hide table' : 'Expand table';
+      setTimeout(() => Object.values(charts).forEach(chart => chart?.resize?.()), 0);
+    });
+    head.appendChild(btn);
+  });
+}
+
+function summarizeCollapsedCard(card) {
+  const title = card.querySelector('.card-head')?.textContent.replace(/Expand table|Hide table|\s+/g, ' ').trim() || '';
+  const rows = [...card.querySelectorAll('tbody tr')];
+  const rowText = row => row.textContent.replace(/\s+/g, ' ').trim();
+  const byLabel = labels => rows.find(row => labels.some(label => rowText(row).toLowerCase().includes(label)));
+  let row = null;
+  const lowerTitle = title.toLowerCase();
+  if (lowerTitle.includes('fixed operating')) row = byLabel(['total fixed opex', 'total fixex operating costs', 'total fixed']);
+  else if (lowerTitle.includes('variable operating')) row = byLabel(['total variable opex', 'total variable operating costs']);
+  else if (lowerTitle.includes('msp summary')) row = byLabel(['minimum selling price', 'msp']);
+  else if (lowerTitle.includes('operation summary')) row = byLabel(['sum total']);
+  else if (lowerTitle.includes('manufacturing')) row = byLabel(['total']);
+  else if (lowerTitle.includes('capital investment')) row = byLabel(['total capital investment']);
+  else if (lowerTitle.includes('equipment detail')) row = byLabel(['grand total', 'dry mortar subtotal']);
+  else if (lowerTitle.includes('cash flow')) row = byLabel(['cumulative npv']);
+  row = row || [...card.querySelectorAll('tr.row-total')].at(-1) || [...card.querySelectorAll('tr.row-subtotal')].at(-1);
+  if (!row) return 'Key result shown here. Expand to view detailed calculations and editable inputs.';
+  const cells = [...row.children].map(cell => cell.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  if (cells.length >= 2) return `${cells[0]}: ${cells[cells.length - 1]}`;
+  return rowText(row);
+}
+
+function refreshCollapsedSummaries() {
+  document.querySelectorAll('.card.collapsible-card').forEach(card => {
+    const summary = card.querySelector('.card-summary');
+    if (summary) summary.textContent = summarizeCollapsedCard(card);
+  });
+}
+
+function setPaneForExport(workspaceId) {
+  document.querySelectorAll('.workspace-pane').forEach(pane => {
+    pane.classList.toggle('active', pane.id === workspaceId);
+    pane.style.display = pane.id === workspaceId ? 'block' : 'none';
+  });
+}
+
+function openPdfChooser() {
+  document.getElementById('pdf-modal')?.classList.add('open');
+}
+
+function closePdfChooser() {
+  document.getElementById('pdf-modal')?.classList.remove('open');
+}
+
+function choosePdfDownload(workspaceId, fileStem) {
+  closePdfChooser();
+  downloadWorkflowPDF(workspaceId, fileStem);
+}
+
+async function downloadWorkflowPDF(workspaceId, fileStem) {
+  if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
+    window.alert('PDF export libraries failed to load.');
+    return;
+  }
+  const pane = document.getElementById(workspaceId);
+  if (!pane) return;
+  const priorActive = document.querySelector('.workspace-pane.active')?.id || 'ws-main';
+  const expanded = [...document.querySelectorAll('.card.collapsible-card.expanded')];
+  const collapsed = [...pane.querySelectorAll('.card.collapsible-card:not(.expanded)')];
+  const priorScroll = window.scrollY;
+
+  try {
+    setPaneForExport(workspaceId);
+    collapsed.forEach(card => card.classList.add('expanded'));
+    pane.querySelectorAll('.expand-card-btn').forEach(btn => { btn.style.display = 'none'; });
+    Object.values(charts).forEach(chart => chart?.resize?.());
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const canvas = await html2canvas(pane, {
+      scale: 1.5,
+      backgroundColor: '#f5f3ef',
+      useCORS: true,
+      windowWidth: pane.scrollWidth,
+      windowHeight: pane.scrollHeight,
+    });
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 7;
+    const printableW = pageW - margin * 2;
+    const printableH = pageH - margin * 2;
+    const pxPerMm = canvas.width / printableW;
+    const pageSlicePx = Math.floor(printableH * pxPerMm);
+    const overlapPx = Math.floor(10 * pxPerMm);
+    const advancePx = Math.max(1, pageSlicePx - overlapPx);
+    let sourceY = 0;
+    let pageIndex = 0;
+    while (sourceY < canvas.height) {
+      const sliceHeight = Math.min(pageSlicePx, canvas.height - sourceY);
+      const slice = document.createElement('canvas');
+      slice.width = canvas.width;
+      slice.height = sliceHeight;
+      const ctx = slice.getContext('2d');
+      ctx.fillStyle = '#f5f3ef';
+      ctx.fillRect(0, 0, slice.width, slice.height);
+      ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+      const imgData = slice.toDataURL('image/png');
+      const imgH = sliceHeight / pxPerMm;
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(imgData, 'PNG', margin, margin, printableW, imgH);
+      sourceY += advancePx;
+      pageIndex += 1;
+    }
+    pdf.save(`${fileStem}_expanded_dashboard.pdf`);
+  } catch (err) {
+    console.error(err);
+    window.alert('PDF export failed. Please check that the browser can load Chart.js, jsPDF, and html2canvas, then try again.');
+  } finally {
+    collapsed.forEach(card => card.classList.remove('expanded'));
+    expanded.forEach(card => card.classList.add('expanded'));
+    pane.querySelectorAll('.expand-card-btn').forEach(btn => { btn.style.display = ''; });
+    setPaneForExport(priorActive);
+    document.querySelectorAll('.workspace-pane').forEach(paneEl => { paneEl.style.display = ''; });
+    window.scrollTo(0, priorScroll);
+    Object.values(charts).forEach(chart => chart?.resize?.());
+  }
+}
+
+const INPUT_DEFAULTS = {
+  'loan-rate': '8',
+  'loan-term': '10',
+  'hours-yr': '2400',
+  'lifetime': '10',
+  'irr': '10',
+  'tax-rate': '21',
+  'p-ta-bio': '85.0',
+  'p-rcf': '0',
+  'p-sand': '9.96',
+  'p-cement': '125',
+  'p-co2': '40',
+  's-cement': '125',
+  's-co2': '40',
+  's-sand': '9.96',
+  's-irr': '10',
+  's-life': '10',
+  'dry-loan-rate': '8',
+  'dry-loan-term': '10',
+  'dry-hours-yr': '2400',
+  'dry-lifetime': '10',
+  'dry-irr': '10',
+  'dry-tax-rate': '21',
+  'dry-p-ta-bio': '84.99',
+  'dry-p-rcf': '0',
+  'dry-p-sand': '9.96',
+  'dry-p-cement': '125',
+  'dry-p-co2': '40',
+  'dry-s-cement': '125',
+  'dry-s-co2': '40',
+  'dry-s-sand': '9.96',
+  'dry-s-irr': '10',
+  'dry-s-life': '10',
+};
+
+function resetAll() {
+  Object.entries(INPUT_DEFAULTS).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+  recalc();
+}
+
+async function generatePDF() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    window.alert('PDF library failed to load.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const state = computeState();
+  const msp = solveMSP(state);
+  const dcf = runDCFRORAtPrice(msp / 100, state);
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const lm = 16;
+  const rm = 194;
+  const pw = rm - lm;
+  let y = 0;
+
+  doc.setFillColor(26, 27, 24);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(15);
+  doc.setFont(undefined, 'bold');
+  doc.text('BioCarb Mortar — TEA Assessment Report', lm, 12);
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.text('University of Alabama · DOE DE-FE0032263 · Chen et al. 2024 · DCFROR Model · 2020 USD', lm, 19);
+  doc.text(`Generated: ${now}`, rm, 19, { align: 'right' });
+  doc.text('Source: SI_2_4_TEA_BioCarb.xlsx', lm, 25);
+  y = 38;
+
+  doc.setTextColor(26, 27, 24);
+  doc.setFillColor(214, 240, 200);
+  doc.rect(lm, y, pw, 18, 'F');
+  doc.setDrawColor(141, 200, 122);
+  doc.rect(lm, y, pw, 18, 'S');
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(42, 107, 21);
+  doc.text('Minimum Selling Price (MSP)  — TEA_BioCarb!B129', lm + 4, y + 7);
+  doc.setFontSize(20);
+  doc.text(msp.toFixed(3) + ' ¢/kg  (2020 USD)', lm + 4, y + 15);
+  y += 24;
+  doc.setTextColor(26, 27, 24);
+
+  const sec = (title, color) => {
+    doc.setFillColor(...color);
+    doc.rect(lm, y, pw, 7, 'F');
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(title, lm + 3, y + 5);
+    y += 10;
+    doc.setTextColor(26, 27, 24);
+  };
+
+  const row = (label, val, ref = '') => {
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.text(label, lm, y);
+    doc.setFont(undefined, 'bold');
+    doc.text(val, lm + 90, y);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(ref, rm, y, { align: 'right' });
+    doc.setTextColor(26, 27, 24);
+    y += 5;
+  };
+
+  const hr = () => {
+    doc.setDrawColor(220);
+    doc.line(lm, y, rm, y);
+    y += 3;
+  };
+
+  sec('CAPITAL INVESTMENT (CAPEX)', [26, 74, 128]);
+  row('Total Capital Investment (TCI)', '$111,362', 'TEA_BioCarb!U18');
+  row('Fixed Capital Investment (FCI)', '$106,059', 'TEA_BioCarb!U15');
+  row('Working Capital (5% of FCI)', '$5,303', 'TEA_BioCarb!U17');
+  row('TA Extraction equipment', '$18,816', 'TEA_BioCarb!U3');
+  row('RCF Preparation equipment', '$24,998', 'TEA_BioCarb!U4');
+  row('Soaking / Carbonation', '$6,080', 'TEA_BioCarb!U44');
+  row('Settling + Mixing + Storage', '$17,147', 'TEA_BioCarb!U46-48');
+  row('Indirect costs', '$39,021', 'TEA_BioCarb!U14');
+  hr();
+
+  sec('OPERATING EXPENDITURE (OPEX, ¢/kg product)', [13, 84, 72]);
+  row('Feedstock biomass for TA', state.costs.ta_bio.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K59');
+  row('Sand', state.costs.sand.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K65');
+  row('Cement', state.costs.cement.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K66');
+  row('CO₂ (SubPC capture)', state.costs.co2.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K68');
+  row('Electricity (all steps)', state.costs.elecTotal.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K81');
+  row('Diesel (jaw crusher)', state.costs.diesel.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K70');
+  row('Other raw materials', state.costs.otherRaw.toFixed(4) + ' ¢/kg', '');
+  row('Total Variable OPEX', state.costs.variableTotal.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K82');
+  row('Labor (2 yard employees × $40,800/yr)', (81600 / state.prod.annualKg * 100).toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K88');
+  row('Maintenance (3% ISBL)', (0.03 * 67041 / state.prod.annualKg * 100).toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K91');
+  row('Property Insurance & Tax (0.7% FCI)', (0.007 * 106059 / state.prod.annualKg * 100).toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K92');
+  row('Total Fixed OPEX', state.costs.fixedCents.toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K93');
+  row('Total Operating Costs', (state.costs.variableTotal + state.costs.fixedCents).toFixed(4) + ' ¢/kg', 'TEA_BioCarb!K94');
+  hr();
+
+  sec('MSP COMPONENT BREAKDOWN (¢/kg, TEA_BioCarb!A133:B145)', [26, 107, 66]);
+  row('Feedstock + Handling', state.costs.ta_bio.toFixed(4), 'B134');
+  row('Sand', state.costs.sand.toFixed(4), 'B135');
+  row('Binder (cement)', state.costs.cement.toFixed(4), 'B136');
+  row('CO₂', state.costs.co2.toFixed(4), 'B137');
+  row('Utility (electricity + diesel)', state.costs.utilityTotal.toFixed(4), 'B141');
+  row('Fixed Costs (labor + O&M)', state.costs.fixedCents.toFixed(4), 'B142');
+  row('Capital Depreciation', state.costs.depreciationCents.toFixed(4), 'B143');
+  doc.setFont(undefined, 'bold');
+  row('MSP (at IRR = ' + (state.irr * 100).toFixed(1) + '%)', msp.toFixed(4) + ' ¢/kg', 'B129 × 100');
+  doc.setFont(undefined, 'normal');
+  hr();
+
+  sec('ECONOMIC ASSUMPTIONS (TEA_BioCarb!A1:D25)', [58, 24, 120]);
+  row('Loan interest rate', (state.loanRate * 100).toFixed(1) + '%', 'B6');
+  row('Loan term', state.loanTerm + ' years', 'B7');
+  row('Equity fraction', '40%', 'B5');
+  row('Discount rate (IRR)', (state.irr * 100).toFixed(1) + '%', 'B23');
+  row('Income tax rate', (state.taxRate * 100).toFixed(1) + '%', 'B24');
+  row('Depreciation (MACRS)', '7 years', 'B14');
+  row('Plant lifetime', state.life + ' years', 'H7');
+  row('Working hours/year', state.prod.hoursYr.toLocaleString() + ' hr/yr', 'H4');
+  row('Annual production', Math.round(state.prod.annualKg).toLocaleString() + ' kg/yr', 'J11');
+  hr();
+
+  sec('MATERIAL PRICES (user-adjustable inputs)', [122, 60, 0]);
+  row('Feedstock biomass for TA', '$' + document.getElementById('p-ta-bio').value + '/mt', 'E59');
+  row('Sand', '$' + state.prices.sand + '/mt', 'E65');
+  row('Cement', '$' + state.prices.cement + '/mt', 'E66');
+  row('CO₂ (SubPC capture)', '$' + state.prices.co2 + '/mt', 'E68');
+  row('RCF (recycled cement fines)', '$' + state.prices.rcf + '/mt', 'E64');
+  hr();
+
+  if (y > 230) {
+    doc.addPage();
+    y = 20;
+  }
+
+  sec('DCFROR SUMMARY (TEA_BioCarb!A98:O129)', [58, 24, 120]);
+  row('Annual product sales (at MSP)', '$' + Math.round(dcf.annualSales).toLocaleString() + '/yr', 'F106');
+  row('Annual variable OPEX', '$' + Math.round(state.costs.variableTotal / 100 * state.prod.annualKg).toLocaleString() + '/yr', '');
+  row('Annual fixed OPEX', '$' + Math.round(BASE_FIXED_DOLLARS).toLocaleString() + '/yr', '');
+  row('Annual loan payment (FCI × 60% debt)', '$' + Math.round(state.annualLoan).toLocaleString() + '/yr', 'B8');
+  dcf.years.slice(0, 5).forEach(yr => {
+    row(`  Year ${yr.yr}: Net Revenue / Cum. NPV`, '$' + Math.round(yr.net_rev).toLocaleString() + ' / $' + Math.round(yr.cum_npv).toLocaleString(), '');
+  });
+  hr();
+
+  if (y > 240) {
+    doc.addPage();
+    y = 20;
+  }
+
+  sec('METHODOLOGY & DATA SOURCES', [100, 100, 100]);
+  const method = [
+    'TEA model: DCFROR (Discounted Cash Flow Rate of Return). MSP = minimum selling price at which NPV = 0.',
+    'Economic parameters: Equity 40%, Loan 8%/10yr, IRR 10%, Income tax 21%, MACRS 7-yr depreciation.',
+    'Production: 3 ft³ mixer, 10 min/batch, 6 batches/hr, 8 hr/day, 300 days/yr → 2,646,288 kg/yr.',
+    'CAPEX: Scaled purchase costs from vendor databases; installation factors from Peters & Timmerhaus.',
+    'OPEX: Flow rates (D-col), prices (E-col), and ¢/kg outputs (K-col) from TEA_BioCarb worksheet.',
+    'Process flow: biocarb_mortar_flow.json — two-row directed graph (main process + background).',
+    'LCA (not in this TEA report): TRACI 2.1, ecoinvent 3.7, CO₂U v2.1 (NETL). GWP base: OpenLCA.',
+    'Reference: Chen et al. 2024, SI_2_4_TEA_BioCarb.xlsx, University of Alabama, DOE DE-FE0032263.',
+  ];
+
+  method.forEach(line => {
+    doc.setFontSize(7.5);
+    doc.setFont(undefined, 'normal');
+    const lines = doc.splitTextToSize('• ' + line, pw);
+    lines.forEach(l => {
+      doc.text(l, lm, y);
+      y += 4.5;
+    });
+  });
+
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(240, 240, 238);
+    doc.rect(0, 284, 210, 13, 'F');
+    doc.setFontSize(7.5);
+    doc.setTextColor(130);
+    doc.text(`BioCarb TEA Report · University of Alabama · DOE DE-FE0032263 · ${now}`, lm, 289);
+    doc.text(`Page ${i} of ${pages}`, rm, 289, { align: 'right' });
+    doc.text('Source: SI_2_4_TEA_BioCarb.xlsx · TEA_BioCarb sheet', lm, 293);
+  }
+
+  doc.save(`BioCarb_TEA_Report_${now.replace(/[, ]+/g, '-')}.pdf`);
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  annotateSpreadsheetRefs();
+  attachFlowNodeInteractions();
+  initCharts();
+  setupExpandableTables();
+  recalc();
+  refreshScenarioWorkflowView();
+});
+</script>
+</body>
+</html>

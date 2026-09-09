@@ -26,6 +26,11 @@
     <changefreq>yearly</changefreq>
   </url>
   <url>
+    <loc>https://jiang-lab.org/biocarb-tea.html</loc>
+    <priority>0.5</priority>
+    <changefreq>yearly</changefreq>
+  </url>
+  <url>
     <loc>https://jiang-lab.org/contact.html</loc>
     <priority>0.7</priority>
     <changefreq>yearly</changefreq>

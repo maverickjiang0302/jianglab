@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LCA Calculator — Jiang Lab</title>
+  <title>LCA-TEA Calculator — Jiang Lab</title>
   <meta name="description" content="Life cycle assessment calculator from Jiang Lab at the University of Alabama — Dr. Daqian Jiang.">
   <meta name="author" content="Daqian Jiang">
   <link rel="canonical" href="https://jiang-lab.org/lca.html">
@@ -24,7 +24,7 @@
     <li><a href="happenings.html">Happenings</a></li>
     <li><a href="team.html">Team and CV</a></li>
     <li><a href="publications.html">Publications</a></li>
-    <li class="nav-tool"><a href="lca.html" class="active">LCA Calculator</a></li>
+    <li class="nav-tool"><a href="lca.html" class="active">LCA-TEA Calculator</a></li>
     <li><a href="contact.html">Contact</a></li>
   </ul>
   <div class="sidebar-footer">
@@ -60,12 +60,20 @@
   <div class="main-inner">
 
     <section class="section">
-      <h1 style="font-size:28px;letter-spacing:-0.02em;margin-bottom:8px;">LCA Calculator</h1>
+      <h1 style="font-size:28px;letter-spacing:-0.02em;margin-bottom:8px;">LCA-TEA Calculator</h1>
       <p id="lca-system-title" style="font-size:14px;color:var(--text-2);margin-bottom:20px;"></p>
 
       <div class="lca-intro">
         Enter the quantities for each process input below. The calculator multiplies each quantity by its predefined emission factor and sums the contributions to estimate the total <strong>Global Warming Potential</strong>.
         Emission factors are defined in <code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:3px;">data/lca-data.js</code> — update that file to change the system boundary or factor values.
+      </div>
+
+      <div class="lca-intro" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
+        <div>
+          <strong>BioCarb Mortar — Techno-Economic Analysis</strong><br>
+          Full TEA dashboard (DCFROR model, minimum selling price, process flow diagram) for the BioCarb Mortar project.
+        </div>
+        <a href="biocarb-tea.html" target="_blank" rel="noopener" class="lca-reset-btn" style="display:inline-block;width:auto;white-space:nowrap;text-decoration:none;text-align:center;background:var(--accent);color:var(--accent-text);border-color:var(--accent);">Open full TEA dashboard →</a>
       </div>
 
       <div class="lca-layout">
