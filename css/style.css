@@ -510,10 +510,12 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 }
 .pub-graphical-abstract {
   width: 100%;
-  max-width: 560px;
+  max-width: 380px;
+  display: block;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 20px;
+  margin: 0 auto 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
 }
 .pub-featured {
   font-size: 13.5px;
