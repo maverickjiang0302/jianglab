@@ -373,6 +373,14 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 .news-title { font-size: 14.5px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
 .news-body { font-size: 13.5px; color: var(--text-2); line-height: 1.65; }
 .news-link { display: inline-block; margin-top: 8px; font-size: 13px; color: var(--accent); font-weight: 500; }
+.news-photo {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
 
 /* ── Team ── */
 .team-section-label {
