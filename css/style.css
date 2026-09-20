@@ -17,6 +17,10 @@
   --accent-light: #cde5e0;
   --accent-text:  #ffffff;
   --radius:       8px;
+  --icon-blue-bg:  #dbeafe;
+  --icon-blue-fg:  #2563eb;
+  --icon-amber-bg: #fef3c7;
+  --icon-amber-fg: #b45309;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +37,10 @@
     --accent-h:     #3acfb0;
     --accent-light: #083d30;
     --accent-text:  #ffffff;
+    --icon-blue-bg:  #1e3a5f;
+    --icon-blue-fg:  #7fb3f5;
+    --icon-amber-bg: #4a3a12;
+    --icon-amber-fg: #f3ba4d;
   }
 }
 
@@ -49,6 +57,10 @@
   --accent-h:     #3acfb0;
   --accent-light: #083d30;
   --accent-text:  #ffffff;
+  --icon-blue-bg:  #1e3a5f;
+  --icon-blue-fg:  #7fb3f5;
+  --icon-amber-bg: #4a3a12;
+  --icon-amber-fg: #f3ba4d;
 }
 
 /* ── Reset ── */
@@ -311,6 +323,9 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
   justify-content: center;
   margin-bottom: 12px;
 }
+.area-icon-blue { background: var(--icon-blue-bg); color: var(--icon-blue-fg); }
+.area-icon-amber { background: var(--icon-amber-bg); color: var(--icon-amber-fg); }
+.area-icon-green { background: var(--accent-light); color: var(--accent); }
 .area-icon svg { width: 19px; height: 19px; }
 
 .area-card-home p.area-hook {
