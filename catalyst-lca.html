@@ -87,10 +87,11 @@ body {
 
 /* ── KPI strip ── */
 .kpi-strip {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
   background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
   overflow: hidden; margin-bottom: 20px;
 }
+@media (max-width: 700px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } .kpi-item:nth-child(2) { border-right: none; } }
 .kpi-item { padding: 12px 14px; border-right: 1px solid var(--rule); }
 .kpi-item:last-child { border-right: none; }
 .kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink3); margin-bottom: 4px; }
@@ -115,6 +116,59 @@ body {
   background: var(--blue-upd); border-radius: 4px; font-size: 11px; color: var(--blue-ink); line-height: 1.5;
 }
 .scenario-note b { color: var(--ink); }
+
+.unit-banner {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--amber-hd); border: 1px solid #e0b877; color: var(--amber-ink);
+  border-radius: 4px; padding: 10px 14px; margin-bottom: 16px;
+  font-size: 12px; font-weight: 700;
+}
+.unit-banner .unit-banner-icon { font-size: 16px; flex-shrink: 0; }
+
+.sial-card {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 10px 14px; margin-bottom: 16px;
+}
+.sial-card label { font-size: 11px; color: var(--ink2); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.sial-card input {
+  font-family: var(--mono); font-size: 12px; padding: 4px 8px; border: 1px solid var(--yellow-bd);
+  background: var(--yellow-in); border-radius: 3px; width: 70px; text-align: right;
+}
+.sial-note { font-size: 9.5px; color: var(--ink3); }
+
+.temp-card {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 12px 14px; margin-bottom: 16px;
+}
+.temp-card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--ink2); margin-bottom: 8px; }
+.temp-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.temp-row label { font-size: 11px; color: var(--ink2); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.temp-row input {
+  font-family: var(--mono); font-size: 12px; padding: 4px 8px; border: 1px solid var(--yellow-bd);
+  background: var(--yellow-in); border-radius: 3px; width: 70px; text-align: right;
+}
+.temp-result { font-size: 11px; color: var(--green-ink); font-weight: 700; margin-top: 4px; }
+.temp-assumptions-toggle { font-size: 10px; font-weight: 700; color: var(--blue-ink); cursor: pointer; text-transform: uppercase; letter-spacing: .4px; }
+.temp-assumptions-toggle:hover { text-decoration: underline; }
+.temp-assumptions-body { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--rule); }
+.temp-assumptions-body.open { display: flex; gap: 16px; flex-wrap: wrap; }
+.temp-assumptions-body label { font-size: 9.5px; color: var(--ink2); display: flex; flex-direction: column; gap: 3px; }
+.temp-assumptions-body input {
+  font-family: var(--mono); font-size: 10.5px; padding: 3px 6px; border: 1px solid var(--rule);
+  border-radius: 3px; background: #fff; width: 70px;
+}
+.derived-badge {
+  display: inline-block; background: var(--rule2); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 2px 8px; font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--ink2);
+  min-width: 70px; text-align: right;
+}
+
+.batch-card {
+  background: var(--blue-upd); border: 1px solid var(--blue-upd-bd); border-radius: 4px;
+  padding: 12px 14px; margin-bottom: 16px; font-size: 11px; color: var(--blue-ink);
+}
+.batch-card b { font-size: 15px; }
 
 /* ── Card / table ── */
 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
@@ -238,6 +292,11 @@ body {
     </div>
   </header>
 
+  <div class="unit-banner">
+    <span class="unit-banner-icon">&#9888;</span>
+    <span>All quantities you enter below must be normalized <u>per 1 kg of zeolite Beta product</u> — e.g. "kg reagent per kg zeolite." The calculator will scale up based on 10 m&#179; batch.</span>
+  </div>
+
   <div class="kpi-strip">
     <div class="kpi-item">
       <div class="kpi-label">Energy Subtotal</div>
@@ -253,6 +312,11 @@ body {
       <div class="kpi-label">Manuscript Benchmark</div>
       <div class="kpi-val" id="kpi-benchmark">—</div>
       <div class="kpi-unit">kg CO&#8322;e/kg (published, this route)</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-label">Per kg Framework Al</div>
+      <div class="kpi-val amber" id="kpi-al">—</div>
+      <div class="kpi-unit">kg CO&#8322;e/kg Al (enter Si/Al below)</div>
     </div>
   </div>
 

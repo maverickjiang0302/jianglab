@@ -26,8 +26,8 @@ const CATALYST_LCA_DATA = {
         {
           name: "Energy",
           items: [
-            { id: "ch_elec", label: "Electricity", unit: "kWh", factor: 0.397, source: "GREET", note: "US average grid mix", defaultQty: 0 },
-            { id: "ch_ng", label: "Natural gas (process heat)", unit: "MJ", factor: 0.0678, source: "GREET+IPCC", note: "0.0175 upstream (GREET) + 0.0503 combustion (EPA/IPCC, HHV)", defaultQty: 0, heatHelper: true }
+            { id: "ch_elec", label: "Electricity (derived)", unit: "kWh", factor: 0.397, source: "GREET", note: "Auto-computed from process temperatures below", defaultQty: 0, derived: true },
+            { id: "ch_ng", label: "Natural gas (derived)", unit: "MJ", factor: 0.0678, source: "GREET+IPCC", note: "Auto-computed from process temperatures below", defaultQty: 0, derived: true }
           ]
         },
         {
@@ -68,8 +68,8 @@ const CATALYST_LCA_DATA = {
         {
           name: "Energy",
           items: [
-            { id: "dgc_elec", label: "Electricity", unit: "kWh", factor: 0.397, source: "GREET", note: "US average grid mix", defaultQty: 0 },
-            { id: "dgc_ng", label: "Natural gas (process heat)", unit: "MJ", factor: 0.0678, source: "GREET+IPCC", note: "0.0175 upstream (GREET) + 0.0503 combustion (EPA/IPCC, HHV)", defaultQty: 0, heatHelper: true }
+            { id: "dgc_elec", label: "Electricity (derived)", unit: "kWh", factor: 0.397, source: "GREET", note: "Auto-computed from process temperatures below", defaultQty: 0, derived: true },
+            { id: "dgc_ng", label: "Natural gas (derived)", unit: "MJ", factor: 0.0678, source: "GREET+IPCC", note: "Auto-computed from process temperatures below", defaultQty: 0, derived: true }
           ]
         },
         {
@@ -96,8 +96,8 @@ const CATALYST_LCA_DATA = {
         {
           name: "Energy",
           items: [
-            { id: "sof_elec", label: "Electricity", unit: "kWh", factor: 0.397, source: "GREET", note: "US average grid mix", defaultQty: 0 },
-            { id: "sof_ng", label: "Natural gas (process heat)", unit: "MJ", factor: 0.0678, source: "GREET+IPCC", note: "0.0175 upstream (GREET) + 0.0503 combustion (EPA/IPCC, HHV)", defaultQty: 0, heatHelper: true }
+            { id: "sof_elec", label: "Electricity (derived)", unit: "kWh", factor: 0.397, source: "GREET", note: "Auto-computed from process temperatures below", defaultQty: 0, derived: true },
+            { id: "sof_ng", label: "Natural gas (derived)", unit: "MJ", factor: 0.0678, source: "GREET+IPCC", note: "Auto-computed from process temperatures below", defaultQty: 0, derived: true }
           ]
         },
         {
