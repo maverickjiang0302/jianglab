@@ -422,7 +422,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 .news-photo {
   display: block;
   width: 100%;
-  max-width: 420px;
+  max-width: 310px;
   margin-top: 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -431,7 +431,7 @@ h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; color: var(--text); text-w
 /* Overlapping two-photo collage */
 .news-collage {
   position: relative;
-  max-width: 560px;
+  max-width: 440px;
   margin-top: 16px;
   padding-bottom: 26%;
 }
