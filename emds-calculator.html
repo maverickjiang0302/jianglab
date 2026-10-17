@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>EMDS Electricity Calculator — Jiang Lab</title>
+<meta name="description" content="Estimate installed power and operating electricity for motor-driven unit operations (mixers, filters, dryers, kilns) with uncertainty. Jiang Lab, University of Alabama.">
+<meta name="author" content="Daqian Jiang">
+<link rel="canonical" href="https://jiang-lab.org/emds-calculator.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: process line of unit cards (left) + process readout (right, sticky); stacks on phones */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --ink:#18232b; --muted:#5a6872; --line:#d3dbe0;
+  --copper:#b2602a; --steel:#3c5a6e; --steel-soft:#e1e9ee;
+  --warn:#8a5a00; --warn-bg:#fbf0d6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --f-display:"Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body:Barlow, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11171b; --panel:#182127; --ink:#e4eaee; --muted:#9aa9b3; --line:#2a363e;
+  --copper:#e08b52; --steel:#8fb2c8; --steel-soft:#1f2c35; --warn:#f0c46a; --warn-bg:#382b10;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171b; --panel:#182127; --ink:#e4eaee; --muted:#9aa9b3; --line:#2a363e;
+  --copper:#e08b52; --steel:#8fb2c8; --steel-soft:#1f2c35; --warn:#f0c46a; --warn-bg:#382b10;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767; color-scheme:dark}
+*{box-sizing:border-box}
+.back{display:inline-block;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--steel);text-decoration:none}
+.back:hover{text-decoration:underline}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-block:22px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+h1{font-family:var(--f-display);font-weight:700;font-size:32px;line-height:1.1;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:6px 0 0;max-width:72ch}
+.badge{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-bg);border-radius:4px;padding:4px 8px}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px 18px;min-width:0}
+.stack{display:grid;gap:14px}
+.results{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+h2{font-family:var(--f-display);font-weight:600;font-size:20px;margin:0 0 10px}
+h3{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.unit{border-left:5px solid var(--uc);}
+.uhead{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center}
+.uhead svg{width:52px;height:52px}
+.uname{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.usel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px;margin-top:3px}
+.iconbtn{font:600 13px var(--f-body);border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:6px;padding:5px 9px;cursor:pointer}
+.iconbtn:hover{color:var(--ink)}
+.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.fields.p4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-weight:600;font-size:13px}
+.field .hint{font-size:11.5px;color:var(--muted)}
+.row{display:flex;gap:6px;min-width:0}
+input[type=number],select{font:14.5px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0;width:100%}
+input[type=number]{font-family:var(--f-mono);font-size:13.5px}
+input:disabled,select:disabled{color:var(--muted);background:var(--steel-soft);cursor:not-allowed}
+.row select{width:auto;flex:0 0 auto}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--copper);outline-offset:1px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.seg button{font:600 13px var(--f-body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:var(--panel)}
+.seg button[aria-pressed="true"] .tag{color:var(--panel);border-color:currentColor}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.seg .tag{text-transform:none;letter-spacing:0}
+.pvbox{margin-top:12px;border:1px solid var(--line);border-left:3px solid var(--copper);border-radius:8px;padding:10px 12px 12px;background:var(--steel-soft)}
+.pvbox .k,.pk{font:600 11px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.pv{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.15;color:var(--copper);font-variant-numeric:tabular-nums}
+.pv small{font:500 14px var(--f-body);color:var(--muted);margin-left:4px}
+.pvbox .fields,.pvbox .seg{margin-top:10px}
+.tag{font:600 10.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--steel);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
+.ures{margin-top:12px;font:13px var(--f-mono);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 16px;font-variant-numeric:tabular-nums}
+.ures b{color:var(--ink);font-weight:600}
+details{margin-top:10px;font-size:13px}
+summary{cursor:pointer;color:var(--steel);font-weight:600}
+details ul{margin:4px 0;padding-left:18px}
+.alert{font-size:12.5px;border-radius:6px;padding:6px 9px;background:var(--warn-bg);color:var(--warn);margin-top:8px}
+.addbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:600 14px var(--f-body);border:0;border-radius:6px;padding:9px 14px;background:var(--copper);color:var(--panel);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--copper);border:1px solid var(--copper)}
+.big{font-family:var(--f-display);font-weight:700;font-size:40px;line-height:1.1;color:var(--copper);font-variant-numeric:tabular-nums}
+.big small{font:500 15px var(--f-body);color:var(--muted);margin-left:4px}
+.sub{font:13px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.kpi{border-top:2px solid var(--line);padding-top:6px;min-width:0}
+.kpi .k{font:600 11px var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.share{display:flex;height:26px;border-radius:4px;overflow:hidden;gap:2px;background:var(--panel)}
+.share div{height:100%;min-width:2px}
+.share div:first-child{border-radius:4px 0 0 4px}.share div:last-child{border-radius:0 4px 4px 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+th{font:600 10.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+tr.tot td{font-weight:700;border-bottom:0}
+.tw{overflow-x:auto}
+.bars{display:grid;gap:5px}
+.bar{display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:12.5px}
+.bar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar i{display:block;height:10px;border-radius:0 4px 4px 0;min-width:1px}
+.bar span:last-child{font-family:var(--f-mono);text-align:right}
+.chart{position:relative}
+.chart svg{width:100%;height:auto;display:block}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--panel);font:12px var(--f-mono);padding:4px 7px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-115%)}
+.mc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+footer{margin-top:28px;font-size:12.5px;color:var(--muted);max-width:90ch}
+.spin{transform-origin:center;transform-box:fill-box;animation:spin 2.4s linear infinite}
+.spin.slow{animation-duration:6s}
+.slide{animation:slide 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slide{to{stroke-dashoffset:-20}}
+@media (prefers-reduced-motion:reduce){.spin,.slide{animation:none}}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}.results{position:static}}
+@media (max-width:560px){.fields,.fields.p4,.mc{grid-template-columns:repeat(2,minmax(0,1fr))}.usel{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:minmax(0,1fr)}.uhead{grid-template-columns:40px minmax(0,1fr) auto}.uhead svg{width:40px;height:40px}h1{font-size:27px}.big{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="lca.html">&larr; Jiang Lab LCA-TEA calculators</a>
+<header>
+  <div>
+    <h1>EMDS Electricity Calculator</h1>
+    <p class="lede">Build a process from motor-driven unit operations and get installed power and operating electricity for each step and for the whole line, with uncertainty. Start from the example below or replace it.</p>
+  </div>
+  <span class="badge">Preliminary · not for citation</span>
+</header>
+
+<div class="grid">
+<div class="stack">
+  <div id="units" class="stack"></div>
+  <div class="panel addbar">
+    <button class="btn" type="button" id="addUnit">Add unit operation</button>
+    <button class="btn ghost" type="button" id="reset">Reset to example</button>
+    <span class="sub" id="unitCount"></span>
+  </div>
+  <section class="panel" aria-labelledby="h-mc">
+    <h2 id="h-mc">Uncertainty in your inputs</h2>
+    <p class="sub" style="margin:0 0 10px">Applied to every unit, sampled independently per unit. LF is uniform between low and high; τ and V<sub>m</sub> are log-uniform within ±%.</p>
+    <div class="mc">
+      <div class="field"><label for="lfLo">LF low</label><input type="number" id="lfLo" step="0.05" min="0.05" max="1.2"></div>
+      <div class="field"><label for="lfHi">LF high</label><input type="number" id="lfHi" step="0.05" min="0.05" max="1.2"></div>
+      <div class="field"><label for="tauPct">τ ± %</label><input type="number" id="tauPct" step="5" min="0" max="90"></div>
+      <div class="field"><label for="vmPct">V<sub>m</sub> ± %</label><input type="number" id="vmPct" step="5" min="0" max="90"></div>
+    </div>
+    <div class="fields" style="grid-template-columns:minmax(0,1fr)">
+      <div class="field"><label for="prod">Final product (t), optional</label><input type="number" id="prod" min="0" step="any" placeholder="e.g. 50"><span class="hint">Adds kWh per tonne of product for the whole process.</span></div>
+    </div>
+  </section>
+</div>
+
+<aside class="results">
+  <section class="panel" aria-labelledby="h-res" aria-live="polite">
+    <h2 id="h-res">Process electricity</h2>
+    <div class="big" id="tE">–<small>kWh</small></div>
+    <div class="sub" id="tEpi"></div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Installed</div><div class="v" id="tP">–</div><div class="sub">kW, all units</div></div>
+      <div class="kpi"><div class="k">Operating hours</div><div class="v" id="tH">–</div><div class="sub">sum over units</div></div>
+      <div class="kpi"><div class="k" id="tSEk">Per tonne</div><div class="v" id="tSE">–</div><div class="sub" id="tSEu">add product mass</div></div>
+    </div>
+    <div id="tAlerts"></div>
+
+    <h3>Share of electricity</h3>
+    <div class="share" id="shareBar" role="img" aria-label="Share of electricity by unit"></div>
+    <div class="legend" id="legend"></div>
+
+    <h3>By unit</h3>
+    <div class="tw"><table id="unitTable"><thead><tr><th>Unit</th><th>Level</th><th>Installed kW</th><th>E</th><th>Share</th><th>95% PI (model)</th></tr></thead><tbody></tbody></table></div>
+
+    <h3>Distribution of total electricity</h3>
+    <div class="chart" id="chart"></div>
+
+    <h3>What drives the uncertainty</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+      <div><div class="sub" style="margin-bottom:4px">By unit</div><div class="bars" id="byUnit"></div></div>
+      <div><div class="sub" style="margin-bottom:4px">By input</div><div class="bars" id="byInput"></div></div>
+    </div>
+
+    <h3>Load factor sensitivity (all units)</h3>
+    <div class="tw"><table id="lfTable"><thead><tr><th>LF</th><th>Total E</th><th>Change</th></tr></thead><tbody></tbody></table></div>
+  </section>
+</aside>
+</div>
+
+<footer>
+  Coefficients come from the revised dataset (800 vendor listings; Nutsche filters n = 58 after screening). Installed power is vendor nameplate power; electricity is E = LF·(P/V<sub>m</sub>)·V<sub>b</sub>·τ/η for each unit, summed over the process. Unit intervals are 95% prediction intervals (×/÷ GSD² at Level 1, ×/÷ 10<sup>2·RMSE</sup> at Levels 2–3); the process interval is from Monte Carlo with independent errors between units. Pooled filter and dryer models are not offered because subtypes differ too much. At Level 1 the class value of P/V<sub>m</sub> is used directly (E = LF·(P/V<sub>m</sub>)·V<sub>b</sub>·τ/η), so installed power and operating hours, which need V<sub>m</sub>, are not reported for those units. Thermal duties are not included; add the loads listed under “Not included” for each unit.
+</footer>
+</div>
+
+<script>
+// ---------- Model data (log10 power laws on native capacity; Level 1 bins on native capacity) ----------
+const MIX_CUTS=[0.2,1.4], FIL_CUTS=[2.5,80], DRY_CUTS=[14,42];
+const vol=(o)=>Object.assign({kind:"vol"},o);
+const CAT={
+ tanks:{name:"Agitated tanks",fam:"tank",models:{
+  pooled:vol({label:"Agitated tank",a:.2181,b:-.5489,s:.4331,range:[0.005,135.4],cuts:[0.2,2.0],gm:[6.382,2.297,0.555],gsd:[2.913,2.995,3.268],
+   tau:null,use:"Liquid blending and low-solids slurry suspension.",inc:["Agitator motor"],exc:["Transfer pumps","Jacket or coil circulation"]})}},
+ mixers:{name:"Mixers",fam:"mixer",models:{
+  pooled:vol({label:"Pooled (subtype unknown)",a:.9753,b:-.2882,s:.1821,range:[0.004,20],cuts:MIX_CUTS,gm:[22.715,10.190,6.891],gsd:[1.656,1.566,1.599],tau:null,use:"Default when the subtype is unknown."}),
+  hr:vol({label:"Horizontal ribbon",a:1.0377,b:-.2600,s:.2121,range:[0.005,17],cuts:MIX_CUTS,gm:[25.1552,11.4883,7.9241],gsd:[1.6718,1.8072,1.5710],tau:[22.5,60,"15–30 min"],use:"Free-flowing to cohesive powders, pastes, light slurries."}),
+  nauta:vol({label:"Nauta",a:.8549,b:-.3584,s:.1110,range:[0.0042,20],cuts:MIX_CUTS,gm:[23.064,7.3898,4.4544],gsd:[1.6618,1.4242,1.4083],tau:[15,60,"3–10 min at 0.3 m³; 15–45 min at 3 m³"],use:"Free-flowing to cohesive material."}),
+  vr:vol({label:"Vertical ribbon",a:1.1429,b:-.3476,s:.0650,range:[0.021,8.4],cuts:MIX_CUTS,gm:[41.0721,16.7295,8.9611],gsd:[1.2935,1.2994,1.1984],tau:null,use:"Cereals, plastics, pigments, pharmaceutical powders."}),
+  dc:vol({label:"Double cone",a:.9166,b:-.2806,s:.1366,range:[0.01,14],cuts:MIX_CUTS,gm:[18.9018,9.1194,6.3135],gsd:[1.4770,1.2938,1.7357],tau:[12.5,60,"10–15 min"],use:"Low-shear mixing of free-flowing solids."}),
+  vb:vol({label:"V-blender",a:.8744,b:-.3238,s:.1107,range:[0.007,2.5],cuts:MIX_CUTS,gm:[18.462,8.5262,6.9134],gsd:[1.7040,1.1980,1.3309],tau:[10,60,"5–15 min"],use:"Low-shear mixing of free-flowing solids."}),
+  d3:vol({label:"3D drum",a:.9168,b:-.3583,s:.0813,range:[0.004,0.8],cuts:MIX_CUTS,gm:[24.9287,11.0363,null],gsd:[1.6239,1.2200,null],tau:null,use:"Low-shear mixing of free-flowing solids."})},
+  inc:["Agitation / blending motor","Vessel rotation (tumbling mixers)"],exc:["Feeding and discharge conveyors","Heating jackets"]},
+ filters:{name:"Filtration units",fam:"filter",models:{
+  rdf:{kind:"layer",label:"Rotary drum vacuum filter",a:.5080,b:-.2403,s:.272,range:[0.25,58.37],cuts:FIL_CUTS,gm:[4.6859,1.6624,null],gsd:[1.2428,1.9401,null],
+   geom:[["h","Minimum cake thickness, h_min",6,"mm",.001,"0.5–13 mm"],["W","Active area fraction, W",0.9,"",1,"0.75–0.90"],["S","Submergence fraction, S",0.3,"",1,"typ. 0.30"]],
+   factor:g=>g.h*(g.W-g.S/3),tau:[0.8,60,"cake time (W − S/3)/N; N ≈ 1 rpm"],use:"Continuous vacuum dewatering of free-filtering slurries.",inc:["Vacuum pump","Drum drive","Agitator drive"],exc:["Slurry feed pump","Filtrate pump"]},
+  nutsche:{kind:"layer",label:"Nutsche filter",a:.8434,b:-.4079,s:.173,range:[0.06,10],cuts:FIL_CUTS,gm:[8.5984,3.8853,null],gsd:[1.7344,1.6730,null],
+   geom:[["h","Minimum cake thickness, h_min",5,"mm",.001,"typ. 5 mm"]],factor:g=>g.h,tau:null,tauNote:"Use the active time (washing, drying, discharge), not filtration.",
+   use:"Batch pressure filtration; pharmaceuticals and specialty chemicals.",inc:["Agitator motor","Hydraulic raise/lower (where reported)"],exc:["Gas (N₂/air) pressurization supply"]},
+  pf:{kind:"layer",label:"Plate and frame filter",a:.3155,b:-.7509,s:.392,range:[11.56,1000],cuts:FIL_CUTS,gm:[null,0.1362,0.0340],gsd:[null,3.4455,2.3049],
+   geom:[["h","Cake thickness, h",30,"mm",.001,"20–50 mm"]],factor:g=>g.h,tau:[5.5,60,"t_open + t_close: 1–10 min"],
+   use:"Batch pressure filtration to dry, high-solids cakes.",inc:["Hydraulic closing and plate-shifting unit"],exc:["Slurry feed pump (add P = Q·Δp/η)"]}}},
+ dryers:{name:"Dryers",fam:"dryer",models:{
+  tray:{kind:"layer",label:"Tray dryer",a:-.7858,b:-.3498,s:.185,range:[3.9,69.12],cuts:DRY_CUTS,gm:[0.0868,0.0485,0.0456],gsd:[1.8760,1.3787,1.2839],
+   geom:[["h","Wet material thickness, h",3,"cm",.01,"1–10 cm"]],factor:g=>g.h,tau:[14,1,"5–40 h"],use:"Batch drying of pharmaceuticals, pigments, fine chemicals.",inc:["Circulation fan / blower"],exc:["Heater"]},
+  rdd:{kind:"rdd",label:"Rotary drum dryer",a:.8069,b:-.5175,s:.251,range:[2.84,175.26],cuts:DRY_CUTS,gm:[3.5467,1.0739,0.6579],gsd:[1.3194,2.0823,1.7728],
+   geom:[["K","Length-to-diameter ratio, L/D",8,"",1,"5–10"],["F","Volumetric loading, F",0.15,"",1,"0.10–0.20"]],tau:[37.5,60,"15–60 min"],use:"Particulate feeds only.",inc:["Drum drive","Fans / blowers"],exc:["Burner or heater"]},
+  belt:{kind:"layer",label:"Belt (conveyor) dryer",a:.7726,b:-.5753,s:.175,range:[3.16,100],cuts:DRY_CUTS,gm:[1.7606,1.0289,0.5330],gsd:[2.0236,1.6543,1.3143],
+   geom:[["h","Wet material thickness, h",5,"cm",.01,"2–15 cm"]],factor:g=>g.h,tau:[45,60,"L/v: 15–340 min"],use:"Particulate and friable products.",inc:["Fans / blowers","Belt and conveyor drives"],exc:["Burner or heater"]},
+  drum:{kind:"layer",label:"Drum dryer",a:.7391,b:-.2651,s:.173,range:[0.75,37.6],cuts:DRY_CUTS,gm:[4.0046,2.3491,null],gsd:[1.6067,1.5394,null],
+   geom:[["h","Wet film thickness, h",0.5,"mm",.001,"0.1–2 mm"],["W","Active area fraction, W",0.75,"",1,"0.60–0.90"]],factor:g=>g.h*g.W,tau:[0.136,60,"W/N; N 1–30 rpm"],use:"Solutions, pastes and high-viscosity products on heated drums.",inc:["Drum drive","Applicator rolls, knife (where reported)"],exc:["Steam supply"]},
+  rp:{kind:"layer",label:"Rotary plate dryer",a:.0965,b:-.4101,s:.071,range:[4.9,180],cuts:DRY_CUTS,gm:[0.5268,0.3254,0.2091],gsd:[1.3124,1.2994,1.3926],
+   geom:[["h","Layer thickness, h",1.25,"cm",.01,"1.0–1.5 cm"]],factor:g=>g.h,tau:[40,60,"5–300 min"],use:"Delicate, free-flowing materials.",inc:["Rake drive","Exhaust fan"],exc:["Heater"]}}},
+ kilns:{name:"Rotary kilns",fam:"kiln",models:{
+  kiln:{kind:"kiln",label:"Rotary kiln",a:-.5109,s:.1223,range:[45.95,2732.2],geom:[["F","Volumetric loading, F",0.115,"",1,"0.08–0.15"]],tau:null,
+   use:"Calcination and solid-state reactions up to 1650 °C.",inc:["Main drum drive"],exc:["Burner","Induced-draft fan","Feed and discharge conveyors"]}}}
+};
+const LEVEL_NOTE={1:"Pick a size class from the approximate holdup volume; the class geometric mean applies. Interval ×/÷ GSD².",
+ 2:"Power law with default geometry. Interval ×/÷ 10^(2·RMSE).",3:"Power law with your own geometry inputs. Interval ×/÷ 10^(2·RMSE)."};
+
+// ---------- Core calculation (pure) ----------
+function native(m,vm,g){ // native capacity (V or A) and the area per holdup volume
+  if(m.kind==="vol") return {cap:vm,unit:"m³"};
+  if(m.kind==="layer") return {cap:vm/m.factor(g),unit:"m²"};
+  if(m.kind==="rdd") return {cap:Math.cbrt(16*Math.PI*g.K*vm*vm/(g.F*g.F)),unit:"m²"};
+  if(m.kind==="kiln") return {cap:vm/g.F,unit:"m³"};
+}
+function defaults(m){const g={};(m.geom||[]).forEach(p=>g[p[0]]=p[2]*p[4]);return g;}
+function estimate(m,level,vm,gUser){
+  const gUse=level===3?gUser:defaults(m);
+  const n=native(m,vm,gUse); let perCap, f, cls=null, sdlog;
+  if(m.kind==="kiln"){perCap=Math.pow(10,m.a);f=Math.pow(10,2*m.s);sdlog=m.s;}
+  else if(level===1){
+    const i=n.cap<m.cuts[0]?0:(n.cap<m.cuts[1]?1:2); cls=["Small","Medium","Large"][i];
+    if(m.gm[i]==null) return {err:`No ${cls.toLowerCase()} size class for this subtype in the dataset. Use Level 2.`,n};
+    perCap=m.gm[i]; f=m.gsd[i]*m.gsd[i]; sdlog=Math.log10(m.gsd[i]);
+  } else {perCap=Math.pow(10,m.a+m.b*Math.log10(n.cap));f=Math.pow(10,2*m.s);sdlog=m.s;}
+  const P=perCap*n.cap;
+  return {P,PV:P/vm,f,sdlog,cls,n,out:n.cap<m.range[0]||n.cap>m.range[1]};
+}
+function energy(P,vm,vb,tauH,lf,eta){return lf*P*(vb/vm)*tauH/eta;}
+
+// ---------- Level 1: one typical P/Vm per size class ----------
+const CLS_NAMES=["Small","Medium","Large"];
+function capUnit(m){return (m.kind==="vol"||m.kind==="kiln")?"m³":"m²";}
+function clsText(m,i){const c=m.cuts,u=capUnit(m);return i===0?`< ${c[0]} ${u}`:i===1?`${c[0]}–${c[1]} ${u}`:`≥ ${c[1]} ${u}`;}
+function clsBounds(m,i){ // class limits on native capacity, clipped to the fitted range
+  const lo=[m.range[0],m.cuts[0],m.cuts[1]][i], hi=[m.cuts[0],m.cuts[1],m.range[1]][i];
+  const a=Math.max(lo,m.range[0]), b=Math.min(hi,m.range[1]); return b>a?[a,b]:[a,a];}
+function capPerVm(m,g,cap){ // native capacity per unit holdup volume
+  if(m.kind==="vol") return 1;
+  if(m.kind==="layer") return 1/m.factor(g);
+  const Vm=Math.sqrt(cap*cap*cap*g.F*g.F/(16*Math.PI*g.K)); return cap/Vm; // rotary drum dryer
+}
+function level1(m,cls){
+  if(m.kind==="kiln") return {PV:Math.pow(10,m.a)/defaults(m).F,f:Math.pow(10,2*m.s),sdlog:m.s,cls:null,out:false};
+  if(m.gm[cls]==null) return {err:`No ${CLS_NAMES[cls].toLowerCase()} size class for this subtype in the dataset. Pick another class.`};
+  const [lo,hi]=clsBounds(m,cls), rep=Math.sqrt(lo*hi);
+  return {PV:m.gm[cls]*capPerVm(m,defaults(m),rep),f:m.gsd[cls]*m.gsd[cls],sdlog:Math.log10(m.gsd[cls]),cls:CLS_NAMES[cls],out:false};
+}
+
+
+const SCHEM={
+ tank:`<svg viewBox="0 0 120 120"><rect x="44" y="4" width="32" height="14" rx="3" fill="var(--copper)"/><text x="60" y="14" font-size="8" text-anchor="middle" fill="var(--panel)" font-family="var(--f-mono)">M</text><rect x="58" y="18" width="4" height="70" fill="var(--steel)"/><path d="M22 26h76v72a12 12 0 0 1-12 12H34a12 12 0 0 1-12-12z" fill="none" stroke="var(--steel)" stroke-width="3"/><rect x="25" y="50" width="70" height="57" fill="var(--steel-soft)"/><g class="spin"><rect x="42" y="84" width="36" height="5" rx="2" fill="var(--copper)"/></g></svg>`,
+ mixer:`<svg viewBox="0 0 120 120"><rect x="6" y="52" width="16" height="16" rx="3" fill="var(--copper)"/><text x="14" y="63" font-size="8" text-anchor="middle" fill="var(--panel)" font-family="var(--f-mono)">M</text><rect x="22" y="58" width="12" height="4" fill="var(--steel)"/><path d="M34 34h70a14 14 0 0 1 0 52H34z" fill="var(--steel-soft)" stroke="var(--steel)" stroke-width="3"/><g class="spin"><circle cx="70" cy="60" r="20" fill="none" stroke="var(--copper)" stroke-width="3" stroke-dasharray="10 6"/></g></svg>`,
+ filter:`<svg viewBox="0 0 120 120"><g class="spin slow"><circle cx="60" cy="58" r="34" fill="var(--steel-soft)" stroke="var(--steel)" stroke-width="3" stroke-dasharray="6 4"/></g><path d="M18 74h84v26H18z" fill="none" stroke="var(--steel)" stroke-width="2"/><rect x="22" y="80" width="76" height="16" fill="var(--steel-soft)"/><rect x="88" y="10" width="24" height="16" rx="3" fill="var(--copper)"/><text x="100" y="21" font-size="8" text-anchor="middle" fill="var(--panel)" font-family="var(--f-mono)">VAC</text></svg>`,
+ dryer:`<svg viewBox="0 0 120 120"><rect x="10" y="30" width="100" height="60" rx="6" fill="var(--steel-soft)" stroke="var(--steel)" stroke-width="3"/><path class="slide" d="M14 72h92" stroke="var(--copper)" stroke-width="4" stroke-dasharray="12 8"/><g class="spin"><path d="M60 40l6 10h-12z M60 60l-6-10h12z" fill="var(--copper)"/></g><rect x="48" y="96" width="24" height="16" rx="3" fill="var(--copper)"/><text x="60" y="107" font-size="8" text-anchor="middle" fill="var(--panel)" font-family="var(--f-mono)">FAN</text></svg>`,
+ kiln:`<svg viewBox="0 0 120 120"><g transform="rotate(-8 60 60)"><rect x="8" y="44" width="104" height="30" rx="8" fill="var(--steel-soft)" stroke="var(--steel)" stroke-width="3"/><path class="slide" d="M14 59h92" stroke="var(--copper)" stroke-width="3" stroke-dasharray="4 10"/></g><rect x="50" y="86" width="22" height="16" rx="3" fill="var(--copper)"/><text x="61" y="97" font-size="8" text-anchor="middle" fill="var(--panel)" font-family="var(--f-mono)">M</text></svg>`
+};
+
+
+// ---------- Monte Carlo helpers ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function normal(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function qs(sorted,p){return sorted[Math.min(sorted.length-1,Math.floor(p*(sorted.length-1)))];}
+function variance(a){let m=0;for(const x of a)m+=x;m/=a.length;let v=0;for(const x of a)v+=(x-m)**2;return v/a.length;}
+
+// ---------- State ----------
+const $=id=>document.getElementById(id);
+const COLORS=["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+let uid=0, units=[];
+function defCls(m){if(!m.gm)return 0;return m.gm[1]!=null?1:m.gm.findIndex(x=>x!=null);}
+function newUnit(type,sub,level,vm,vb,tau,tauU){
+  const m=CAT[type].models[sub];
+  const u={id:++uid,type,sub,level,vm,vb,lf:0.6,eta:1,tau:tau??(m.tau?m.tau[0]:1),tauU:tauU??(m.tau?m.tau[1]:1),cls:defCls(m),geom:{}};
+  u.def={vb:u.vb,tau:u.tau,tauU:u.tauU,lf:u.lf,eta:u.eta};
+  (m.geom||[]).forEach(p=>u.geom[p[0]]=p[2]); return u;
+}
+function example(){ uid=0; return [
+  newUnit("mixers","nauta",2,1,500,30,60),
+  newUnit("filters","nutsche",2,0.04,20,30,60),
+  newUnit("dryers","tray",2,0.6,100,14,1)]; }
+const fmt=(x)=>{if(!isFinite(x))return"–";const a=Math.abs(x);if(a>=1e5)return x.toExponential(2);if(a>=100)return x.toLocaleString(undefined,{maximumFractionDigits:0});if(a>=10)return x.toFixed(1);if(a>=1)return x.toFixed(2);return x.toPrecision(2);};
+function scaleE(E){return E>=1e6?[1e6,"GWh"]:E>=1e3?[1e3,"MWh"]:[1,"kWh"];}
+function geomSI(u){const m=CAT[u.type].models[u.sub],g={};(m.geom||[]).forEach(p=>g[p[0]]=(u.level===3?u.geom[p[0]]:p[2])*p[4]);return g;}
+function color(i){return `var(${COLORS[i%COLORS.length]})`;}
+function label(u){return CAT[u.type].models[u.sub].label;}
+
+// ---------- Card rendering ----------
+function cardHTML(u,i){
+  const m=CAT[u.type].models[u.sub], fam=CAT[u.type].fam, kiln=m.kind==="kiln", hasGeom=!!(m.geom&&m.geom.length);
+  const L={inc:m.inc||CAT[u.type].inc||[],exc:m.exc||CAT[u.type].exc||[]};
+  const tauHint=m.tau?`Typical: ${m.tau[2]}`:(m.tauNote||"Enter your process time");
+  const lv=[1,2,3].map(l=>`<button type="button" data-act="level" data-l="${l}" aria-pressed="${u.level===l}">Level ${l}</button>`).join("");
+  const vmField=`<div class="field"><label for="vm${u.id}">V<sub>m</sub> (m³)</label><input type="number" id="vm${u.id}" data-f="vm" min="0" step="any" value="${u.vm}"><span class="hint">Holdup; continuous: Q·τ</span></div>`;
+  const lock=u.level<3?"disabled":"";
+  let sizing="", note="";
+  if(u.level===1){
+    note=kiln?"Size-independent: P/V<sub>m</sub> is one typical value. No V<sub>m</sub> is needed, so installed kW and operating hours are not calculated."
+      :"Pick a size class. P/V<sub>m</sub> is one typical value for that class (default geometry). No V<sub>m</sub> is needed, so installed kW and operating hours are not calculated.";
+    if(!kiln) sizing=`<div class="seg" role="group" aria-label="Size class">${[0,1,2].map(c=>`<button type="button" data-act="cls" data-c="${c}" aria-pressed="${u.cls===c}" ${m.gm[c]==null?"disabled title='No data for this class'":""}>${CLS_NAMES[c]}<span class="tag">${clsText(m,c)}</span></button>`).join("")}</div><div class="sub" style="margin-top:6px">Class by ${m.kind==="vol"?"holdup volume":"equipment area"}.</div>`;
+  } else if(u.level===2){
+    note=m.kind==="vol"?"Enter V<sub>m</sub>; P/V<sub>m</sub> follows from the fitted power law."
+      :kiln?"Size-independent: P/V<sub>m</sub> is the same for any V<sub>m</sub>; V<sub>m</sub> sets installed kW and hours."
+      :"Enter V<sub>m</sub>; geometry is fixed at our defaults (switch to Level 3 to edit).";
+    sizing=`<div class="fields">${vmField}</div>`;
+  } else {
+    note=m.kind==="vol"?"Tanks and mixers need only V<sub>m</sub>; Level 3 equals Level 2."
+      :kiln?"Size-independent; enter V<sub>m</sub> and your own loading F.":"Enter V<sub>m</sub> and your own geometry.";
+    const geom=(m.geom||[]).map(([k,lab,def,unit,conv,rng])=>`<div class="field"><label for="g${u.id}_${k}">${lab}${unit?` (${unit})`:""}</label><input type="number" id="g${u.id}_${k}" data-geom="${k}" step="any" min="0" value="${u.geom[k]}"><span class="hint">Range ${rng}</span></div>`).join("");
+    sizing=`<div class="fields">${vmField}${geom}</div>`;
+  }
+  return `<section class="panel unit" style="--uc:${color(i)}" data-id="${u.id}" aria-label="Unit ${i+1}">
+   <div class="uhead"><div aria-hidden="true">${SCHEM[fam]}</div>
+    <div><div class="uname">Unit ${i+1}</div><div class="usel">
+     <select data-act="type" aria-label="Equipment type">${Object.entries(CAT).map(([k,v])=>`<option value="${k}" ${k===u.type?"selected":""}>${v.name}</option>`).join("")}</select>
+     <select data-act="sub" aria-label="Subtype" ${Object.keys(CAT[u.type].models).length===1?"disabled":""}>${Object.entries(CAT[u.type].models).map(([k,v])=>`<option value="${k}" ${k===u.sub?"selected":""}>${v.label}</option>`).join("")}</select></div></div>
+    <button class="iconbtn" type="button" data-act="remove" aria-label="Remove unit ${i+1}" ${units.length===1?"disabled":""}>Remove</button></div>
+   <div class="seg" role="group" aria-label="Level">${lv}</div>
+   <div class="sub" style="margin-top:6px">${note}</div>
+   <div class="pvbox">
+    <div class="k">Power density P/V<sub>m</sub></div>
+    <div class="pv" id="pv${u.id}" aria-live="polite">–<small>kW/m³</small></div>
+    ${sizing}
+   </div>
+   <div class="pk" style="margin-top:14px">Process inputs${u.level<3?`<span class="tag">locked</span>`:""}</div>
+   ${u.level<3?`<div class="sub" style="margin-top:4px">Fixed at defaults. Switch to Level 3 to edit.</div>`:""}
+   <div class="fields p4" style="margin-top:6px">
+    <div class="field"><label for="vb${u.id}">V<sub>b</sub> (m³)</label><input type="number" id="vb${u.id}" data-f="vb" min="0" step="any" value="${u.vb}" ${lock}><span class="hint">Total processed</span></div>
+    <div class="field"><label for="tau${u.id}">τ</label><div class="row"><input type="number" id="tau${u.id}" data-f="tau" min="0" step="any" value="${u.tau}" ${lock}><select data-f="tauU" aria-label="Time unit" ${lock}><option value="60" ${u.tauU==60?"selected":""}>min</option><option value="1" ${u.tauU==1?"selected":""}>h</option></select></div><span class="hint">${tauHint}</span></div>
+    <div class="field"><label for="lf${u.id}">LF<span class="tag">default</span></label><input type="number" id="lf${u.id}" data-f="lf" min="0.05" max="1.2" step="0.05" value="${u.lf}" ${lock}><span class="hint">0.60 default</span></div>
+    <div class="field"><label for="eta${u.id}">η</label><input type="number" id="eta${u.id}" data-f="eta" min="0.3" max="1" step="0.01" value="${u.eta}" ${lock}><span class="hint">1.00 = not applied</span></div>
+   </div>
+   <div class="ures" id="ur${u.id}"></div><div id="ua${u.id}"></div>
+   <details><summary>Motors included and not included</summary><b>Included</b><ul>${L.inc.map(x=>`<li>${x}</li>`).join("")}</ul><b>Not included, add separately</b><ul>${L.exc.map(x=>`<li>${x}</li>`).join("")}</ul><div class="sub">${m.use||""}</div></details>
+  </section>`;
+}
+function renderCards(){
+  $("units").innerHTML=units.map(cardHTML).join("");
+  $("unitCount").textContent=`${units.length} of 8 units`;
+  $("addUnit").disabled=units.length>=8;
+  compute();
+}
+$("units").addEventListener("input",e=>{
+  const card=e.target.closest(".unit"); if(!card) return; const u=units.find(x=>x.id==card.dataset.id);
+  if(e.target.dataset.f){u[e.target.dataset.f]=+e.target.value;compute();}
+  else if(e.target.dataset.geom){u.geom[e.target.dataset.geom]=+e.target.value;compute();}
+});
+$("units").addEventListener("change",e=>{
+  const card=e.target.closest(".unit"); if(!card) return; const u=units.find(x=>x.id==card.dataset.id); const act=e.target.dataset.act;
+  if(act==="type"||act==="sub"){
+    const type=act==="type"?e.target.value:u.type, sub=act==="type"?Object.keys(CAT[type].models)[0]:e.target.value;
+    const n=newUnit(type,sub,u.level,u.vm,u.vb); n.id=u.id; n.lf=u.lf; n.eta=u.eta; units[units.indexOf(u)]=n; renderCards();
+    const f=document.querySelector(`.unit[data-id="${u.id}"] [data-act="${act}"]`); if(f) f.focus();
+  }
+});
+$("units").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return; const card=b.closest(".unit"); const u=units.find(x=>x.id==card.dataset.id);
+  if(b.dataset.act==="level"){
+    const nl=+b.dataset.l;
+    if(u.level===3&&nl<3){u.custom={vb:u.vb,tau:u.tau,tauU:u.tauU,lf:u.lf,eta:u.eta};Object.assign(u,u.def);}
+    else if(u.level<3&&nl===3&&u.custom){Object.assign(u,u.custom);}
+    u.level=nl;renderCards();const f=document.querySelector(`.unit[data-id="${u.id}"] [data-l="${u.level}"]`);if(f)f.focus();}
+  if(b.dataset.act==="cls"){u.cls=+b.dataset.c;renderCards();const f=document.querySelector(`.unit[data-id="${u.id}"] [data-c="${u.cls}"]`);if(f)f.focus();}
+  if(b.dataset.act==="remove"&&units.length>1){units=units.filter(x=>x!==u);renderCards();}
+});
+$("addUnit").addEventListener("click",()=>{const last=units[units.length-1];units.push(newUnit("dryers","rdd",2,1,last?last.vb:100));renderCards();
+  const c=document.querySelector(`.unit[data-id="${uid}"] [data-act="type"]`);if(c){c.scrollIntoView({block:"center",behavior:"smooth"});c.focus({preventScroll:true});}});
+$("reset").addEventListener("click",()=>{units=example();renderCards();});
+["lfLo","lfHi","tauPct","vmPct","prod"].forEach(id=>$(id).addEventListener("input",compute));
+
+// ---------- Compute ----------
+function unitCalc(u){
+  const m=CAT[u.type].models[u.sub], tauH=u.tau/u.tauU;
+  if(u.level===1){
+    if(!(u.vb>0&&tauH>0&&u.lf>0&&u.eta>0)) return {err:"Enter positive values for V_b, τ, LF and η."};
+    const e=level1(m,u.cls); if(e.err) return {err:e.err};
+    return {...e,m,tauH,P:null,hours:null,E:u.lf*e.PV*u.vb*tauH/u.eta};
+  }
+  if(!(u.vm>0&&u.vb>0&&tauH>0&&u.lf>0&&u.eta>0)) return {err:"Enter positive values for V_m, V_b, τ, LF and η."};
+  const e=estimate(m,u.level,u.vm,geomSI(u)); if(e.err) return {err:e.err};
+  return {...e,m,tauH,E:energy(e.P,u.vm,u.vb,tauH,u.lf,u.eta),hours:u.vb/u.vm*tauH};
+}
+function sampleUnit(u,c,r,vary,set){
+  if(u.level===1){
+    const PVs=c.PV*Math.pow(10,vary.model?normal(r)*c.sdlog:0);
+    const lf1=vary.lf?set.lfLo+(set.lfHi-set.lfLo)*r():u.lf;
+    const t1=vary.tau&&set.tauPct>0?c.tauH*Math.pow(10,(r()*2-1)*Math.log10(1+set.tauPct/100)):c.tauH;
+    return lf1*PVs*u.vb*t1/u.eta;
+  }
+  const vmi=vary.vm&&set.vmPct>0?u.vm*Math.pow(10,(r()*2-1)*Math.log10(1+set.vmPct/100)):u.vm;
+  const e=vmi===u.vm?c:estimate(c.m,u.level,vmi,geomSI(u)); if(e.err) return c.E;
+  const P=e.P*Math.pow(10,vary.model?normal(r)*c.sdlog:0);
+  const lf=vary.lf?set.lfLo+(set.lfHi-set.lfLo)*r():u.lf;
+  const t=vary.tau&&set.tauPct>0?c.tauH*Math.pow(10,(r()*2-1)*Math.log10(1+set.tauPct/100)):c.tauH;
+  return energy(P,vmi,u.vb,t,lf,u.eta);
+}
+function simulate(valid,set,which,onlyUnit){
+  const r=mulberry32(20261016),N=4000,out=new Float64Array(N);
+  for(let i=0;i<N;i++){let s=0;for(const [u,c] of valid){const vary=(onlyUnit==null||onlyUnit===u.id)?which:{};s+=(onlyUnit==null||onlyUnit===u.id)?sampleUnit(u,c,r,vary,set):c.E;}out[i]=s;}
+  return out;
+}
+function compute(){
+  const set={lfLo:+$("lfLo").value,lfHi:+$("lfHi").value,tauPct:+$("tauPct").value||0,vmPct:+$("vmPct").value||0};
+  if(!(set.lfLo>0&&set.lfHi>=set.lfLo)){set.lfLo=set.lfHi=null;}
+  const valid=[], rows=[]; let tot=0,totP=0,totH=0,nP=0;
+  units.forEach((u,i)=>{
+    const c=unitCalc(u), ur=$("ur"+u.id), ua=$("ua"+u.id), pvEl=$("pv"+u.id), al=[];
+    if(c.err){pvEl.innerHTML="–<small>kW/m³</small>";ur.innerHTML="";ua.innerHTML=`<div class="alert">${c.err.replace("V_m","V<sub>m</sub>").replace("V_b","V<sub>b</sub>")} This unit is left out of the totals.</div>`;rows.push({u,i,c});return;}
+    if(c.out) al.push(`Capacity ${fmt(c.n.cap)} ${c.n.unit} is outside the fitted range (${c.m.range[0]}–${c.m.range[1]} ${c.n.unit}); extrapolation.`);
+    if(u.level!==1&&u.vb<u.vm) al.push("V<sub>b</sub> is smaller than V<sub>m</sub>.");
+    const [k,un]=scaleE(c.E);
+    pvEl.innerHTML=`${fmt(c.PV)}<small>kW/m³</small>`;
+    ur.innerHTML=`<span>95% PI <b>${fmt(c.PV/c.f)} – ${fmt(c.PV*c.f)}</b> kW/m³</span>${c.P!=null?`<span>Installed <b>${fmt(c.P)}</b> kW</span>`:""}<span>E <b>${fmt(c.E/k)}</b> ${un}</span>${c.cls||c.n?`<span>${[c.cls?c.cls+" class":"",c.n?fmt(c.n.cap)+" "+c.n.unit:""].filter(Boolean).join(" · ")}</span>`:""}`;
+    ua.innerHTML=al.map(a=>`<div class="alert">${a}</div>`).join("");
+    valid.push([u,c]); tot+=c.E; if(c.P!=null){totP+=c.P;totH+=c.hours;nP++;} rows.push({u,i,c});
+  });
+  const [k,un]=scaleE(tot);
+  $("tE").innerHTML=`${fmt(tot/k)}<small>${un}</small>`;
+  $("tP").textContent=nP?fmt(totP):"–"; $("tH").textContent=nP?fmt(totH):"–";
+  const prod=+$("prod").value;
+  if(prod>0){$("tSE").textContent=fmt(tot/prod);$("tSEu").textContent="kWh per tonne product";}else{$("tSE").textContent="–";$("tSEu").textContent="add product mass";}
+  const nL1=valid.length-nP;
+  $("tAlerts").innerHTML=(valid.length<units.length?`<div class="alert">${units.length-valid.length} unit(s) left out of the totals; see the unit cards.</div>`:"")+(nL1?`<div class="alert">Installed kW and operating hours leave out ${nL1} Level 1 unit(s), which have no V<sub>m</sub>.</div>`:"");
+  // share bar, legend, table
+  $("shareBar").innerHTML=rows.filter(r=>!r.c.err).map(r=>`<div style="flex:${r.c.E} 1 0;background:${color(r.i)}" title="Unit ${r.i+1}: ${(100*r.c.E/tot).toFixed(1)}%"></div>`).join("");
+  $("legend").innerHTML=rows.map(r=>`<span><i style="background:${color(r.i)}"></i>${r.i+1}. ${label(r.u)}${r.c.err?" (excluded)":` · ${(100*r.c.E/tot).toFixed(0)}%`}</span>`).join("");
+  $("unitTable").tBodies[0].innerHTML=rows.map(r=>r.c.err?`<tr><td><span class="sw" style="background:${color(r.i)}"></span>${r.i+1}. ${label(r.u)}</td><td>${r.u.level}</td><td colspan="4">excluded</td></tr>`:
+    `<tr><td><span class="sw" style="background:${color(r.i)}"></span>${r.i+1}. ${label(r.u)}</td><td>${r.u.level}</td><td>${r.c.P!=null?fmt(r.c.P):"–"}</td><td>${fmt(r.c.E/k)} ${un}</td><td>${(100*r.c.E/tot).toFixed(1)}%</td><td>${fmt(r.c.E/r.c.f/k)} – ${fmt(r.c.E*r.c.f/k)}</td></tr>`).join("")+
+    `<tr class="tot"><td>Total</td><td></td><td>${nP?fmt(totP):"–"}</td><td>${fmt(tot/k)} ${un}</td><td>100%</td><td></td></tr>`;
+  // LF sensitivity
+  $("lfTable").tBodies[0].innerHTML=[0.4,0.6,0.8].map(l=>{const t=valid.reduce((s,[u,c])=>s+l*c.PV*u.vb*c.tauH/u.eta,0);return `<tr><td>${l.toFixed(1)} for all units</td><td>${fmt(t/k)} ${un}</td><td>${tot?((t/tot-1)*100>=0?"+":"")+((t/tot-1)*100).toFixed(0)+"%":"–"}</td></tr>`;}).join("");
+  if(!valid.length){$("tEpi").textContent="";$("chart").innerHTML="";$("byUnit").innerHTML="";$("byInput").innerHTML="";return;}
+  // Monte Carlo
+  const setUse={...set}; if(setUse.lfLo==null){setUse.lfLo=0.6;setUse.lfHi=0.6;}
+  const all=simulate(valid,setUse,{model:1,lf:1,tau:1,vm:1});
+  const srt=Array.from(all).sort((a,b)=>a-b), lo=qs(srt,.025), md=qs(srt,.5), hi=qs(srt,.975);
+  $("tEpi").textContent=`Monte Carlo median ${fmt(md/k)} ${un}; 95% interval ${fmt(lo/k)} – ${fmt(hi/k)} ${un}`;
+  drawHist(srt,k,un,lo,hi,md);
+  const byU=valid.map(([u,c])=>[u,variance(simulate(valid,setUse,{model:1,lf:1,tau:1,vm:1},u.id))]);
+  const su=byU.reduce((s,x)=>s+x[1],0)||1;
+  $("byUnit").innerHTML=byU.map(([u,v])=>{const i=units.indexOf(u);return `<div class="bar"><span>${i+1}. ${label(u)}</span><i style="width:${(100*v/su).toFixed(1)}%;background:${color(i)}"></i><span>${Math.round(100*v/su)}%</span></div>`;}).join("");
+  const byI=[["Model (P/V)",{model:1}],["Load factor",{lf:1}],["τ",{tau:1}],["V_m",{vm:1}]].map(([n,w])=>[n,variance(simulate(valid,setUse,w))]);
+  const si=byI.reduce((s,x)=>s+x[1],0)||1;
+  $("byInput").innerHTML=byI.map(([n,v])=>`<div class="bar"><span>${n.replace("V_m","V<sub>m</sub>")}</span><i style="width:${(100*v/si).toFixed(1)}%;background:var(--steel)"></i><span>${Math.round(100*v/si)}%</span></div>`).join("");
+}
+function drawHist(srt,k,un,lo,hi,md){
+  const W=520,H=160,pl=8,pr=8,pt=8,pb=30,nb=36;
+  const L=srt.map(x=>Math.log10(x)), mn=L[0], mx=L[L.length-1], span=(mx-mn)||1;
+  const cnt=new Array(nb).fill(0); L.forEach(v=>cnt[Math.min(nb-1,Math.floor((v-mn)/span*nb))]++);
+  const cmax=Math.max(...cnt), bw=(W-pl-pr)/nb, X=v=>pl+(Math.log10(v)-mn)/span*(W-pl-pr);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Distribution of total process electricity">`;
+  s+=`<rect x="${X(lo)}" y="${pt}" width="${X(hi)-X(lo)}" height="${H-pt-pb}" fill="var(--steel-soft)"/>`;
+  cnt.forEach((c,i)=>{const h=(H-pt-pb)*c/cmax,a=10**(mn+span*i/nb),b=10**(mn+span*(i+1)/nb);
+    s+=`<rect class="hb" x="${(pl+i*bw+1).toFixed(1)}" y="${(H-pb-h).toFixed(1)}" width="${Math.max(1,bw-2).toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" rx="2" fill="var(--copper)" data-t="${fmt(a/k)}–${fmt(b/k)} ${un}: ${(100*c/srt.length).toFixed(1)}%"/>`;});
+  s+=`<line x1="${X(md)}" x2="${X(md)}" y1="${pt}" y2="${H-pb}" stroke="var(--ink)" stroke-width="1.5"/><line x1="${pl}" x2="${W-pr}" y1="${H-pb}" y2="${H-pb}" stroke="var(--line)"/>`;
+  [[lo,"2.5%","start"],[md,"median","middle"],[hi,"97.5%","end"]].forEach(([v,l,an])=>{s+=`<text x="${X(v)}" y="${H-pb+14}" font-size="11" fill="var(--muted)" text-anchor="${an}" font-family="JetBrains Mono, monospace">${fmt(v/k)}</text><text x="${X(v)}" y="${H-4}" font-size="10" fill="var(--muted)" text-anchor="${an}">${l}</text>`;});
+  s+=`</svg><div class="tip" id="tip" hidden></div>`;
+  const c=$("chart"); c.innerHTML=s;
+  c.querySelectorAll(".hb").forEach(r=>{r.addEventListener("mousemove",ev=>{const t=$("tip"),b=c.getBoundingClientRect();t.hidden=false;t.textContent=r.dataset.t;t.style.left=(ev.clientX-b.left)+"px";t.style.top=(ev.clientY-b.top)+"px";});r.addEventListener("mouseleave",()=>$("tip").hidden=true);});
+}
+
+// ---------- Start ----------
+$("lfLo").value=0.4;$("lfHi").value=0.8;$("tauPct").value=25;$("vmPct").value=0;
+units=example(); renderCards();
+</script>
+</body>
+</html>
